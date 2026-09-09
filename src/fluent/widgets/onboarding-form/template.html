@@ -1,0 +1,46 @@
+<div class="panel panel-default claudecode-onboarding-widget">
+    <div class="panel-heading">
+        <h3 class="panel-title">Richiesta di Onboarding</h3>
+    </div>
+    <div class="panel-body">
+        <form name="onboardingForm" ng-if="!c.submitted" ng-submit="c.submit()" novalidate>
+            <div class="form-group">
+                <label for="cc-first-name">Nome</label>
+                <input id="cc-first-name" type="text" class="form-control" ng-model="c.formData.first_name" required>
+            </div>
+            <div class="form-group">
+                <label for="cc-last-name">Cognome</label>
+                <input id="cc-last-name" type="text" class="form-control" ng-model="c.formData.last_name" required>
+            </div>
+            <div class="form-group">
+                <label for="cc-email">Email</label>
+                <input id="cc-email" type="email" class="form-control" ng-model="c.formData.email" required>
+            </div>
+            <div class="form-group">
+                <label for="cc-department">Dipartimento</label>
+                <input id="cc-department" type="text" class="form-control" ng-model="c.formData.department">
+            </div>
+            <div class="form-group">
+                <label for="cc-start-date">Data di inizio</label>
+                <input id="cc-start-date" type="date" class="form-control" ng-model="c.formData.start_date">
+            </div>
+            <button type="submit" class="btn btn-primary" ng-disabled="onboardingForm.$invalid">
+                Invia richiesta
+            </button>
+        </form>
+
+        <div ng-if="c.submitted" class="alert alert-success claudecode-success">
+            <p>{{c.message}}</p>
+            <button type="button" class="btn btn-default btn-sm" ng-click="c.resetForm()">
+                Invia un'altra richiesta
+            </button>
+        </div>
+
+        <div ng-if="!c.submitted && c.message" class="alert alert-warning">
+            {{c.message}}
+        </div>
+    </div>
+    <div class="panel-footer claudecode-badge">
+        <small>Widget creato da Claude Code</small>
+    </div>
+</div>

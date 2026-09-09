@@ -1,0 +1,22 @@
+.claudecode-onboarding-widget {
+    margin: 10px;
+    border-radius: 4px;
+
+    .panel-heading {
+        background-color: #f5f5f5;
+    }
+
+    .panel-body {
+        padding: 15px;
+    }
+
+    .claudecode-badge {
+        text-align: right;
+        font-size: 11px;
+        opacity: 0.65;
+    }
+
+    .claudecode-success p {
+        margin-bottom: 10px;
+    }
+}
