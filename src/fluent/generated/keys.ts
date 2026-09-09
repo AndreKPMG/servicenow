@@ -13,9 +13,17 @@ declare global {
                         table: 'sys_script'
                         id: '334d5b377fed48b3829b40da163285c2'
                     }
+                    'claudecode-onboarding-homepage-column': {
+                        table: 'sp_column'
+                        id: '7080586de0be41438cca7315e511376e'
+                    }
                     'claudecode-onboarding-homepage-instance': {
                         table: 'sp_instance'
                         id: 'dfc2495884904ec18bb669e70c1364c4'
+                    }
+                    'claudecode-onboarding-homepage-row': {
+                        table: 'sp_row'
+                        id: '4f1f0356fa0040a8b203de5a04fce75f'
                     }
                     'claudecode-onboarding-widget': {
                         table: 'sp_widget'
