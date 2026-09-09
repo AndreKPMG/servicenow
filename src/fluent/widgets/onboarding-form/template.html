@@ -24,13 +24,14 @@
                 <label for="cc-start-date">Data di inizio</label>
                 <input id="cc-start-date" type="date" class="form-control" ng-model="c.formData.start_date">
             </div>
-            <button type="submit" class="btn btn-primary" ng-disabled="onboardingForm.$invalid">
-                Invia richiesta
+            <button type="submit" class="btn btn-primary" ng-disabled="onboardingForm.$invalid || c.submitting">
+                <span ng-if="c.submitting"><i class="fa fa-spinner fa-spin"></i> Invio in corso&hellip;</span>
+                <span ng-if="!c.submitting">Invia richiesta</span>
             </button>
         </form>
 
-        <div ng-if="c.submitted" class="alert alert-success claudecode-success">
-            <p>{{c.message}}</p>
+        <div ng-if="c.submitted" class="alert alert-success claudecode-success" role="alert">
+            <p><i class="fa fa-check-circle"></i> {{c.message}}</p>
             <button type="button" class="btn btn-default btn-sm" ng-click="c.resetForm()">
                 Invia un'altra richiesta
             </button>
