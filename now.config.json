@@ -1,0 +1,6 @@
+{
+    "scope": "x_kpm95_claudecode",
+    "scopeId": "960d3d75efb64880a66732c974d7bb8d",
+    "name": "ClaudeCodeTest",
+    "tsconfigPath": "./src/server/tsconfig.json"
+}
