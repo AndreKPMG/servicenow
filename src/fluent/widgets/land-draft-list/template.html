@@ -1,32 +1,40 @@
-<div class="rn-panel">
-    <div class="rn-panel__header">
-        <h2 class="rn-panel__title">My project drafts</h2>
-        <button type="button" class="rn-panel__refresh" ng-click="c.refresh()" ng-disabled="c.refreshing"
+<div class="rn-panel" id="rn-my-drafts">
+    <div class="rn-panel-head">
+        <h2 class="rn-panel-title">My project drafts</h2>
+        <button type="button" class="rn-refresh" ng-click="c.refresh()" ng-disabled="c.refreshing"
             title="Refresh list" aria-label="Refresh list">
             <i class="fa fa-refresh" ng-class="{'fa-spin': c.refreshing}"></i>
         </button>
     </div>
 
-    <div class="rn-panel__body">
+    <div class="rn-panel-body">
         <div class="rn-empty" ng-if="!c.data.drafts.length">
-            <p class="rn-empty__title">No drafts yet</p>
-            <p class="rn-empty__text">Projects you save or submit will be listed here.</p>
+            <div class="rn-empty-icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 64 64" focusable="false">
+                    <path
+                        d="M54 10C30 10 14 22 14 40c0 4 1 8 3 11 8-16 19-25 32-30-11 7-20 17-26 31 3 1 6 2 9 2 17 0 26-16 26-32 0-5-1-9-4-12z"
+                        fill="currentColor" />
+                </svg>
+            </div>
+            <p class="rn-empty-title">No drafts yet</p>
+            <p class="rn-empty-text">Projects you save or submit will be listed here.</p>
         </div>
 
-        <ul class="rn-list" ng-if="c.data.drafts.length">
-            <li class="rn-list__item" ng-repeat="draft in c.data.drafts track by draft.sysId">
-                <div class="rn-list__head">
-                    <span class="rn-list__name">{{draft.projectName}}</span>
-                    <span class="rn-badge rn-badge--{{draft.state}}">{{draft.stateLabel}}</span>
+        <ul class="rn-items" ng-if="c.data.drafts.length">
+            <li class="rn-item" ng-repeat="draft in c.data.drafts track by draft.sysId">
+                <div class="rn-item-top">
+                    <span class="rn-item-name">{{draft.projectName}}</span>
+                    <span class="rn-chip rn-chip-{{draft.state}}">{{draft.stateLabel}}</span>
                 </div>
-                <p class="rn-list__meta">
-                    <span ng-if="draft.energyType">{{draft.energyType}}</span>
-                    <span ng-if="draft.municipality"> · {{draft.municipality}}<span ng-if="draft.region">, {{draft.region}}</span></span>
+                <p class="rn-item-meta" ng-if="draft.energyType || draft.municipality">
+                    <span ng-if="draft.energyType">{{draft.energyType}}</span><span
+                        ng-if="draft.energyType && draft.municipality"> · </span><span
+                        ng-if="draft.municipality">{{draft.municipality}}<span ng-if="draft.region">, {{draft.region}}</span></span>
                 </p>
-                <p class="rn-list__figures">
-                    <span ng-if="draft.capacity">{{draft.capacity}} MW</span>
-                    <span ng-if="draft.area"> · {{draft.area}} ha</span>
-                    <span class="rn-list__date"> · {{draft.created}}</span>
+                <p class="rn-item-figs">
+                    <span ng-if="draft.capacity">{{draft.capacity}} MW</span><span
+                        ng-if="draft.capacity && draft.area"> · </span><span ng-if="draft.area">{{draft.area}} ha</span>
+                    <span class="rn-item-date">{{draft.created}}</span>
                 </p>
             </li>
         </ul>

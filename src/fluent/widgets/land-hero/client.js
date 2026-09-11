@@ -1,8 +1,8 @@
 api.controller = function () {
     var c = this
 
-    c.scrollToForm = function () {
-        var target = document.getElementById('rn-draft-form')
+    c.scrollTo = function (elementId) {
+        var target = document.getElementById(elementId)
         if (target && target.scrollIntoView) {
             target.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }

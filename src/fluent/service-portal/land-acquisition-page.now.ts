@@ -15,12 +15,8 @@ export const landAcquisitionPage = SPPage({
     dynamicTitleStructure: 'Land Acquisition - ${portal.title}',
     css: `
         .rn-page-band {
-            padding: 28px 0 40px;
-            background-color: #f6faf8;
-        }
-        .rn-page-band .container {
-            padding-left: 0;
-            padding-right: 0;
+            padding: 28px 0 44px;
+            background-color: #f1f8f4;
         }
     `,
     containers: [

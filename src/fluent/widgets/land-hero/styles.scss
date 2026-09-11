@@ -1,120 +1,141 @@
-$rn-green-900: #0f4c33;
-$rn-green-700: #1b7f4b;
-$rn-green-400: #4fbe86;
-$rn-green-050: #eef8f2;
-$rn-white: #ffffff;
+/* Flat selectors only: the Service Portal SCSS compiler does not support
+   "&__element" concatenation -- nested BEM rules silently never apply. */
 
 .rn-hero {
-    position: relative;
-    overflow: hidden;
-    padding: 40px 36px;
-    border-radius: 10px;
-    color: $rn-white;
-    background: linear-gradient(120deg, $rn-green-900 0%, $rn-green-700 100%);
-
-    &__leaf {
-        position: absolute;
-        top: -30px;
-        right: -20px;
-        width: 260px;
-        color: $rn-green-400;
-        opacity: 0.18;
-
-        svg {
-            width: 100%;
-            height: auto;
-        }
-    }
-
-    &__body {
-        position: relative;
-        max-width: 640px;
-    }
-
-    &__eyebrow {
-        margin: 0 0 6px;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: $rn-green-400;
-    }
-
-    &__title {
-        margin: 0 0 10px;
-        font-size: 34px;
-        font-weight: 600;
-        line-height: 1.2;
-        color: $rn-white;
-    }
-
-    &__subtitle {
-        margin: 0 0 22px;
-        font-size: 16px;
-        line-height: 1.55;
-        color: rgba(255, 255, 255, 0.86);
-    }
-
-    &__cta {
-        padding: 10px 22px;
-        font-weight: 600;
-        border: 0;
-        border-radius: 4px;
-        color: $rn-green-900;
-        background-color: $rn-white;
-
-        &:hover,
-        &:focus {
-            color: $rn-green-900;
-            background-color: $rn-green-050;
-        }
-    }
-
-    &__stats {
-        position: relative;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 32px;
-        margin-top: 30px;
-        padding-top: 22px;
-        border-top: 1px solid rgba(255, 255, 255, 0.22);
-    }
+    padding: 44px 44px 36px;
+    border-radius: 14px;
+    background-color: #0e3b25;
+    background-image: linear-gradient(125deg, #0e3b25 0%, #17703f 62%, #1d8a4e 100%);
+    box-shadow: 0 10px 30px rgba(14, 59, 37, 0.18);
 }
 
-.rn-stat {
-    display: flex;
-    flex-direction: column;
+.rn-hero-inner {
+    max-width: 660px;
+}
 
-    &__value {
-        font-size: 26px;
-        font-weight: 600;
-        line-height: 1.1;
-        color: $rn-white;
-    }
+.rn-hero-badge {
+    display: inline-block;
+    padding: 10px;
+    margin-bottom: 16px;
+    color: #7fd6a5;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+}
 
-    &__label {
-        margin-top: 2px;
-        font-size: 12px;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.75);
-    }
+.rn-hero-badge svg {
+    display: block;
+}
+
+.rn-hero-eyebrow {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8fdcb1;
+}
+
+.rn-hero-title {
+    margin: 0 0 12px;
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 1.15;
+    color: #ffffff;
+}
+
+.rn-hero-sub {
+    margin: 0 0 26px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.rn-hero-actions {
+    margin-bottom: 4px;
+}
+
+.rn-hero-cta {
+    padding: 11px 24px;
+    margin-right: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0e3b25;
+    background-color: #ffffff;
+    border: 1px solid #ffffff;
+    border-radius: 6px;
+}
+
+.rn-hero-cta:hover,
+.rn-hero-cta:focus {
+    color: #0e3b25;
+    background-color: #e8f6ee;
+    border-color: #e8f6ee;
+}
+
+.rn-hero-ghost {
+    padding: 11px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 6px;
+}
+
+.rn-hero-ghost:hover,
+.rn-hero-ghost:focus {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: #ffffff;
+}
+
+.rn-hero-stats {
+    margin-top: 34px;
+    padding-top: 26px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rn-stat-card {
+    padding: 14px 18px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.rn-stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: #ffffff;
+}
+
+.rn-stat-label {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
 }
 
 @media (max-width: 767px) {
     .rn-hero {
-        padding: 28px 22px;
+        padding: 30px 22px 26px;
+    }
 
-        &__title {
-            font-size: 26px;
-        }
+    .rn-hero-title {
+        font-size: 27px;
+    }
 
-        &__leaf {
-            display: none;
-        }
+    .rn-hero-cta,
+    .rn-hero-ghost {
+        display: block;
+        width: 100%;
+        margin: 0 0 10px;
+    }
 
-        &__stats {
-            gap: 20px;
-        }
+    .rn-stat-card {
+        margin-bottom: 10px;
     }
 }

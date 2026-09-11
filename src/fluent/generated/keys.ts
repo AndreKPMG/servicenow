@@ -65,6 +65,22 @@ declare global {
                         table: 'sp_widget'
                         id: '3e811516446f4c19b84ac98e56387ad5'
                     }
+                    x_kpm95_claudecode_land_drafts_col: {
+                        table: 'sp_column'
+                        id: 'e6f69bc00fdc4448928d10573de67469'
+                    }
+                    x_kpm95_claudecode_land_drafts_container: {
+                        table: 'sp_container'
+                        id: '78a498d82a4b47d8b537519366f1e790'
+                    }
+                    x_kpm95_claudecode_land_drafts_instance: {
+                        table: 'sp_instance'
+                        id: '82d02a2280a943fda33436ef0ad27252'
+                    }
+                    x_kpm95_claudecode_land_drafts_row: {
+                        table: 'sp_row'
+                        id: 'c9fad763d0e941d29d30d6b307e758f1'
+                    }
                     x_kpm95_claudecode_land_hero: {
                         table: 'sp_widget'
                         id: 'b849da2d86604fee89cbd1715a0d4142'
@@ -81,6 +97,22 @@ declare global {
                         table: 'sp_instance'
                         id: 'be53a1f770e2428194ca25c159bc41f9'
                     }
+                    x_kpm95_claudecode_land_menu: {
+                        table: 'sp_instance_menu'
+                        id: '04a8945a907242bb9ee650d76a91b66b'
+                    }
+                    x_kpm95_claudecode_land_menu_drafts: {
+                        table: 'sp_rectangle_menu_item'
+                        id: 'b7c25b6cc8ed4a90ab5e31f435ed29c0'
+                    }
+                    x_kpm95_claudecode_land_menu_home: {
+                        table: 'sp_rectangle_menu_item'
+                        id: '0ed1d0d95e5d497bbf4efc184a389e66'
+                    }
+                    x_kpm95_claudecode_land_portal: {
+                        table: 'sp_portal'
+                        id: 'b0f4bcb0335140ffa9b950970e23a8cd'
+                    }
                     x_kpm95_claudecode_land_row_hero: {
                         table: 'sp_row'
                         id: '1b52c6c4066f4551843343d47f7e05ee'
@@ -88,6 +120,10 @@ declare global {
                     x_kpm95_claudecode_land_row_main: {
                         table: 'sp_row'
                         id: 'e0891e005ae141f590134e3d5207513c'
+                    }
+                    x_kpm95_claudecode_land_theme: {
+                        table: 'sp_theme'
+                        id: 'bb7175f98b52442f8381a79048ada31e'
                     }
                 }
                 composite: [
@@ -556,6 +592,13 @@ declare global {
                         id: 'd317ab6bb60843b082f4725029d1e885'
                         key: {
                             id: 'x_kpm95_claudecode_land_acquisition'
+                        }
+                    },
+                    {
+                        table: 'sp_page'
+                        id: 'daf83ddae08f43a3954c6b42c77d3299'
+                        key: {
+                            id: 'x_kpm95_claudecode_land_my_drafts'
                         }
                     },
                     {

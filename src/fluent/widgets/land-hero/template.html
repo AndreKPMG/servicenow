@@ -1,33 +1,43 @@
 <div class="rn-hero">
-    <div class="rn-hero__leaf" aria-hidden="true">
-        <svg viewBox="0 0 64 64" focusable="false">
-            <path
-                d="M54 10C30 10 14 22 14 40c0 4 1 8 3 11 8-16 19-25 32-30-11 7-20 17-26 31 3 1 6 2 9 2 17 0 26-16 26-32 0-5-1-9-4-12z"
-                fill="currentColor" />
-        </svg>
+    <div class="rn-hero-inner">
+        <div class="rn-hero-badge">
+            <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                <path
+                    d="M54 10C30 10 14 22 14 40c0 4 1 8 3 11 8-16 19-25 32-30-11 7-20 17-26 31 3 1 6 2 9 2 17 0 26-16 26-32 0-5-1-9-4-12z"
+                    fill="currentColor" />
+            </svg>
+        </div>
+        <p class="rn-hero-eyebrow">{{c.data.eyebrow}}</p>
+        <h1 class="rn-hero-title">{{c.data.title}}</h1>
+        <p class="rn-hero-sub">{{c.data.subtitle}}</p>
+        <div class="rn-hero-actions">
+            <button type="button" class="rn-hero-cta" ng-click="c.scrollTo('rn-draft-form')">
+                Start a new draft
+            </button>
+            <button type="button" class="rn-hero-ghost" ng-click="c.scrollTo('rn-my-drafts')">
+                View my drafts
+            </button>
+        </div>
     </div>
 
-    <div class="rn-hero__body">
-        <p class="rn-hero__eyebrow">{{c.data.eyebrow}}</p>
-        <h1 class="rn-hero__title">{{c.data.title}}</h1>
-        <p class="rn-hero__subtitle">{{c.data.subtitle}}</p>
-        <button type="button" class="btn rn-hero__cta" ng-click="c.scrollToForm()">
-            Start a new draft
-        </button>
-    </div>
-
-    <div class="rn-hero__stats">
-        <div class="rn-stat">
-            <span class="rn-stat__value">{{c.data.stats.drafts}}</span>
-            <span class="rn-stat__label">Open drafts</span>
+    <div class="row rn-hero-stats">
+        <div class="col-sm-4">
+            <div class="rn-stat-card">
+                <span class="rn-stat-value">{{c.data.stats.drafts}}</span>
+                <span class="rn-stat-label">Open drafts</span>
+            </div>
         </div>
-        <div class="rn-stat">
-            <span class="rn-stat__value">{{c.data.stats.submitted}}</span>
-            <span class="rn-stat__label">In review</span>
+        <div class="col-sm-4">
+            <div class="rn-stat-card">
+                <span class="rn-stat-value">{{c.data.stats.submitted}}</span>
+                <span class="rn-stat-label">In review</span>
+            </div>
         </div>
-        <div class="rn-stat">
-            <span class="rn-stat__value">{{c.data.stats.hectares}}</span>
-            <span class="rn-stat__label">Hectares assessed</span>
+        <div class="col-sm-4">
+            <div class="rn-stat-card">
+                <span class="rn-stat-value">{{c.data.stats.hectares}}</span>
+                <span class="rn-stat-label">Hectares assessed</span>
+            </div>
         </div>
     </div>
 </div>

@@ -1,143 +1,137 @@
 <div class="rn-card" id="rn-draft-form">
-    <div class="rn-card__header">
-        <h2 class="rn-card__title">New project draft</h2>
-        <p class="rn-card__subtitle">
-            Land acquisition proposal for a renewable generation site. Save it as a draft and complete it later, or
+    <div class="rn-card-head">
+        <h2 class="rn-card-title">New project draft</h2>
+        <p class="rn-card-sub">
+            Land acquisition proposal for a renewable generation site. Save it as a draft and finish it later, or
             submit it for review by the development team.
         </p>
     </div>
 
-    <div class="rn-card__body">
-        <div class="rn-alert rn-alert--error" ng-if="c.errors.length" role="alert">
-            <ul class="rn-alert__list">
+    <div class="rn-card-body">
+        <div class="rn-alert" ng-if="c.errors.length" role="alert">
+            <p class="rn-alert-title">Please check the following</p>
+            <ul class="rn-alert-list">
                 <li ng-repeat="error in c.errors track by $index">{{error}}</li>
             </ul>
         </div>
 
         <form name="landForm" ng-if="c.view === 'form'" ng-submit="c.submitForReview()" novalidate>
-            <fieldset class="rn-fieldset">
-                <legend class="rn-legend">Project</legend>
-                <div class="row">
-                    <div class="col-sm-7 form-group">
-                        <label class="rn-label" for="rn-project-name">
-                            Project name <span class="rn-required">*</span>
-                        </label>
-                        <input id="rn-project-name" type="text" class="form-control rn-input" maxlength="120"
-                            ng-model="c.form.project_name" placeholder="e.g. Valle Verde solar park">
-                    </div>
-                    <div class="col-sm-5 form-group">
-                        <label class="rn-label" for="rn-energy-type">
-                            Energy type <span class="rn-required">*</span>
-                        </label>
-                        <select id="rn-energy-type" class="form-control rn-input" ng-model="c.form.energy_type"
-                            ng-options="choice.value as choice.label for choice in c.data.energyTypes">
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
+            <p class="rn-section-title">Project</p>
+            <div class="row">
+                <div class="col-sm-7 rn-field">
+                    <label class="rn-label" for="rn-project-name">Project name <span class="rn-req">*</span></label>
+                    <input id="rn-project-name" type="text" class="rn-input" maxlength="120"
+                        ng-model="c.form.project_name" placeholder="e.g. Valle Verde solar park">
                 </div>
-                <div class="row">
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-capacity">Estimated capacity (MW)</label>
-                        <input id="rn-capacity" type="number" step="any" min="0" class="form-control rn-input"
-                            ng-model="c.form.estimated_capacity_mw">
-                    </div>
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-area">Area (ha)</label>
-                        <input id="rn-area" type="number" step="any" min="0" class="form-control rn-input"
-                            ng-model="c.form.area_hectares">
-                    </div>
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-grid">Distance to grid (km)</label>
-                        <input id="rn-grid" type="number" step="any" min="0" class="form-control rn-input"
-                            ng-model="c.form.grid_distance_km">
-                    </div>
+                <div class="col-sm-5 rn-field">
+                    <label class="rn-label" for="rn-energy-type">Energy type <span class="rn-req">*</span></label>
+                    <select id="rn-energy-type" class="rn-input" ng-model="c.form.energy_type"
+                        ng-options="choice.value as choice.label for choice in c.data.energyTypes">
+                        <option value="">Select an energy type</option>
+                    </select>
                 </div>
-            </fieldset>
+            </div>
+            <div class="row">
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-capacity">Estimated capacity</label>
+                    <input id="rn-capacity" type="number" step="any" min="0" class="rn-input"
+                        ng-model="c.form.estimated_capacity_mw" placeholder="MW">
+                </div>
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-area">Area</label>
+                    <input id="rn-area" type="number" step="any" min="0" class="rn-input"
+                        ng-model="c.form.area_hectares" placeholder="hectares">
+                </div>
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-grid">Distance to grid</label>
+                    <input id="rn-grid" type="number" step="any" min="0" class="rn-input"
+                        ng-model="c.form.grid_distance_km" placeholder="km">
+                </div>
+            </div>
 
-            <fieldset class="rn-fieldset">
-                <legend class="rn-legend">Site &amp; land</legend>
-                <div class="row">
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-municipality">
-                            Municipality <span class="rn-required">*</span>
-                        </label>
-                        <input id="rn-municipality" type="text" class="form-control rn-input" maxlength="100"
-                            ng-model="c.form.municipality">
-                    </div>
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-region">Region / Province</label>
-                        <input id="rn-region" type="text" class="form-control rn-input" maxlength="100"
-                            ng-model="c.form.region">
-                    </div>
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-country">Country</label>
-                        <input id="rn-country" type="text" class="form-control rn-input" maxlength="100"
-                            ng-model="c.form.country">
-                    </div>
+            <p class="rn-section-title">Site &amp; land</p>
+            <div class="row">
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-municipality">Municipality <span class="rn-req">*</span></label>
+                    <input id="rn-municipality" type="text" class="rn-input" maxlength="100"
+                        ng-model="c.form.municipality">
                 </div>
-                <div class="row">
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-cadastral">Cadastral reference</label>
-                        <input id="rn-cadastral" type="text" class="form-control rn-input" maxlength="100"
-                            ng-model="c.form.cadastral_reference">
-                    </div>
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-landowner">Landowner</label>
-                        <input id="rn-landowner" type="text" class="form-control rn-input" maxlength="120"
-                            ng-model="c.form.landowner_name">
-                    </div>
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-landowner-email">Landowner email</label>
-                        <input id="rn-landowner-email" type="email" class="form-control rn-input"
-                            ng-model="c.form.landowner_email">
-                    </div>
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-region">Region / Province</label>
+                    <input id="rn-region" type="text" class="rn-input" maxlength="100" ng-model="c.form.region">
                 </div>
-            </fieldset>
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-country">Country</label>
+                    <input id="rn-country" type="text" class="rn-input" maxlength="100" ng-model="c.form.country">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-cadastral">Cadastral reference</label>
+                    <input id="rn-cadastral" type="text" class="rn-input" maxlength="100"
+                        ng-model="c.form.cadastral_reference">
+                </div>
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-landowner">Landowner</label>
+                    <input id="rn-landowner" type="text" class="rn-input" maxlength="120"
+                        ng-model="c.form.landowner_name">
+                </div>
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-landowner-email">Landowner email</label>
+                    <input id="rn-landowner-email" type="email" class="rn-input" ng-model="c.form.landowner_email">
+                </div>
+            </div>
 
-            <fieldset class="rn-fieldset">
-                <legend class="rn-legend">Commercial</legend>
-                <div class="row">
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-target-date">Target acquisition date</label>
-                        <input id="rn-target-date" type="date" class="form-control rn-input"
-                            ng-model="c.form.target_acquisition_date">
-                    </div>
-                    <div class="col-sm-4 form-group">
-                        <label class="rn-label" for="rn-budget">Indicative budget</label>
-                        <input id="rn-budget" type="number" step="any" min="0" class="form-control rn-input"
-                            ng-model="c.form.estimated_budget">
-                    </div>
+            <p class="rn-section-title">Commercial</p>
+            <div class="row">
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-target-date">Target acquisition date</label>
+                    <input id="rn-target-date" type="date" class="rn-input"
+                        ng-model="c.form.target_acquisition_date">
                 </div>
-                <div class="row">
-                    <div class="col-sm-12 form-group">
-                        <label class="rn-label" for="rn-notes">Notes</label>
-                        <textarea id="rn-notes" rows="4" class="form-control rn-input" ng-model="c.form.notes"
-                            placeholder="Access constraints, permitting considerations, landowner discussions so far…"></textarea>
-                    </div>
+                <div class="col-sm-4 rn-field">
+                    <label class="rn-label" for="rn-budget">Indicative budget</label>
+                    <input id="rn-budget" type="number" step="any" min="0" class="rn-input"
+                        ng-model="c.form.estimated_budget">
                 </div>
-            </fieldset>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 rn-field">
+                    <label class="rn-label" for="rn-notes">Notes</label>
+                    <textarea id="rn-notes" rows="4" class="rn-input rn-textarea" ng-model="c.form.notes"
+                        placeholder="Access constraints, permitting considerations, landowner discussions so far…"></textarea>
+                </div>
+            </div>
 
             <div class="rn-actions">
-                <button type="submit" class="btn rn-btn rn-btn--primary" ng-disabled="c.submitting">
-                    <span ng-if="c.submitting"><i class="fa fa-spinner fa-spin"></i> Working…</span>
+                <button type="submit" class="rn-btn rn-btn-primary" ng-disabled="c.submitting">
+                    <span ng-if="c.submitting">Working…</span>
                     <span ng-if="!c.submitting">Submit for review</span>
                 </button>
-                <button type="button" class="btn rn-btn rn-btn--ghost" ng-click="c.saveDraft()"
-                    ng-disabled="c.submitting">
+                <button type="button" class="rn-btn rn-btn-ghost" ng-click="c.saveDraft()" ng-disabled="c.submitting">
                     Save as draft
                 </button>
-                <span class="rn-actions__hint">Drafts stay editable and are visible only to you and the development team.</span>
+                <p class="rn-actions-note">
+                    Drafts stay editable and are visible only to you and the development team.
+                </p>
             </div>
         </form>
 
-        <div class="rn-success" ng-if="c.view === 'success'">
-            <div class="rn-success__icon" aria-hidden="true"><i class="fa fa-check"></i></div>
-            <h3 class="rn-success__title">{{c.result.message}}</h3>
-            <p class="rn-success__detail">
+        <div class="rn-ok" ng-if="c.view === 'success'">
+            <div class="rn-ok-icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" focusable="false">
+                    <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <h3 class="rn-ok-title">{{c.result.message}}</h3>
+            <p class="rn-ok-text">
                 <strong>{{c.result.projectName}}</strong> was recorded with status
-                <span class="rn-badge rn-badge--{{c.result.state}}">{{c.result.state === 'submitted' ? 'Submitted' : 'Draft'}}</span>.
+                <span class="rn-pill" ng-class="c.result.state === 'submitted' ? 'rn-pill-submitted' : 'rn-pill-draft'">
+                    {{c.result.state === 'submitted' ? 'Submitted' : 'Draft'}}
+                </span>
             </p>
-            <button type="button" class="btn rn-btn rn-btn--primary" ng-click="c.startAnother()">
+            <button type="button" class="rn-btn rn-btn-primary" ng-click="c.startAnother()">
                 Add another project
             </button>
         </div>
