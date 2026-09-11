@@ -1,0 +1,61 @@
+import {
+    Table,
+    StringColumn,
+    MultiLineTextColumn,
+    ChoiceColumn,
+    DecimalColumn,
+    DateColumn,
+    EmailColumn,
+    ReferenceColumn,
+} from '@servicenow/sdk/core'
+
+// Draft project proposals for renewable energy land acquisition,
+// submitted from the Land Acquisition Service Portal page.
+export const x_kpm95_claudecode_land_draft = Table({
+    name: 'x_kpm95_claudecode_land_draft',
+    label: 'Land Acquisition Draft',
+    display: 'project_name',
+    schema: {
+        project_name: StringColumn({ label: 'Project name', maxLength: 120, mandatory: true }),
+        energy_type: ChoiceColumn({
+            label: 'Energy type',
+            dropdown: 'dropdown_with_none',
+            choices: {
+                solar: 'Solar PV',
+                wind_onshore: 'Onshore wind',
+                wind_offshore: 'Offshore wind',
+                hydro: 'Hydro',
+                biomass: 'Biomass',
+                geothermal: 'Geothermal',
+                storage: 'Battery storage',
+            },
+        }),
+        state: ChoiceColumn({
+            label: 'Status',
+            default: 'draft',
+            dropdown: 'dropdown_without_none',
+            choices: {
+                draft: 'Draft',
+                submitted: 'Submitted',
+                in_review: 'In review',
+                approved: 'Approved',
+                rejected: 'Rejected',
+            },
+        }),
+        municipality: StringColumn({ label: 'Municipality', maxLength: 100 }),
+        region: StringColumn({ label: 'Region / Province', maxLength: 100 }),
+        country: StringColumn({ label: 'Country', maxLength: 100 }),
+        cadastral_reference: StringColumn({ label: 'Cadastral reference', maxLength: 100 }),
+        area_hectares: DecimalColumn({ label: 'Area (ha)' }),
+        estimated_capacity_mw: DecimalColumn({ label: 'Estimated capacity (MW)' }),
+        grid_distance_km: DecimalColumn({ label: 'Distance to grid connection (km)' }),
+        landowner_name: StringColumn({ label: 'Landowner', maxLength: 120 }),
+        landowner_email: EmailColumn({ label: 'Landowner email' }),
+        target_acquisition_date: DateColumn({ label: 'Target acquisition date' }),
+        estimated_budget: DecimalColumn({ label: 'Indicative budget' }),
+        notes: MultiLineTextColumn({ label: 'Notes' }),
+        submitted_by: ReferenceColumn({ label: 'Submitted by', referenceTable: 'sys_user' }),
+    },
+    accessibleFrom: 'public',
+    actions: { create: true, read: true, update: true, delete: false },
+})

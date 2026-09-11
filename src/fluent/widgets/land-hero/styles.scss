@@ -1,0 +1,120 @@
+$rn-green-900: #0f4c33;
+$rn-green-700: #1b7f4b;
+$rn-green-400: #4fbe86;
+$rn-green-050: #eef8f2;
+$rn-white: #ffffff;
+
+.rn-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 40px 36px;
+    border-radius: 10px;
+    color: $rn-white;
+    background: linear-gradient(120deg, $rn-green-900 0%, $rn-green-700 100%);
+
+    &__leaf {
+        position: absolute;
+        top: -30px;
+        right: -20px;
+        width: 260px;
+        color: $rn-green-400;
+        opacity: 0.18;
+
+        svg {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    &__body {
+        position: relative;
+        max-width: 640px;
+    }
+
+    &__eyebrow {
+        margin: 0 0 6px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: $rn-green-400;
+    }
+
+    &__title {
+        margin: 0 0 10px;
+        font-size: 34px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: $rn-white;
+    }
+
+    &__subtitle {
+        margin: 0 0 22px;
+        font-size: 16px;
+        line-height: 1.55;
+        color: rgba(255, 255, 255, 0.86);
+    }
+
+    &__cta {
+        padding: 10px 22px;
+        font-weight: 600;
+        border: 0;
+        border-radius: 4px;
+        color: $rn-green-900;
+        background-color: $rn-white;
+
+        &:hover,
+        &:focus {
+            color: $rn-green-900;
+            background-color: $rn-green-050;
+        }
+    }
+
+    &__stats {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 32px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid rgba(255, 255, 255, 0.22);
+    }
+}
+
+.rn-stat {
+    display: flex;
+    flex-direction: column;
+
+    &__value {
+        font-size: 26px;
+        font-weight: 600;
+        line-height: 1.1;
+        color: $rn-white;
+    }
+
+    &__label {
+        margin-top: 2px;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.75);
+    }
+}
+
+@media (max-width: 767px) {
+    .rn-hero {
+        padding: 28px 22px;
+
+        &__title {
+            font-size: 26px;
+        }
+
+        &__leaf {
+            display: none;
+        }
+
+        &__stats {
+            gap: 20px;
+        }
+    }
+}

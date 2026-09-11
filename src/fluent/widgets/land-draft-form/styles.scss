@@ -1,0 +1,217 @@
+$rn-green-900: #0f4c33;
+$rn-green-700: #1b7f4b;
+$rn-green-500: #2ea36a;
+$rn-green-100: #d9efe3;
+$rn-green-050: #eef8f2;
+$rn-white: #ffffff;
+$rn-ink: #1f2a24;
+$rn-muted: #5c6b63;
+$rn-border: #dbe7e0;
+$rn-danger: #b3261e;
+$rn-danger-bg: #fdecea;
+
+.rn-card {
+    background-color: $rn-white;
+    border: 1px solid $rn-border;
+    border-radius: 10px;
+    overflow: hidden;
+
+    &__header {
+        padding: 22px 26px;
+        border-bottom: 3px solid $rn-green-700;
+        background-color: $rn-green-050;
+    }
+
+    &__title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 600;
+        color: $rn-green-900;
+    }
+
+    &__subtitle {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.5;
+        color: $rn-muted;
+    }
+
+    &__body {
+        padding: 24px 26px 26px;
+    }
+}
+
+.rn-fieldset {
+    padding: 0;
+    margin: 0 0 18px;
+    border: 0;
+}
+
+.rn-legend {
+    width: 100%;
+    padding: 0 0 8px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $rn-green-700;
+    border-bottom: 1px solid $rn-border;
+}
+
+.rn-label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: $rn-ink;
+}
+
+.rn-required {
+    color: $rn-green-700;
+}
+
+.rn-input {
+    height: auto;
+    padding: 9px 12px;
+    font-size: 14px;
+    color: $rn-ink;
+    background-color: $rn-white;
+    border: 1px solid $rn-border;
+    border-radius: 4px;
+    box-shadow: none;
+
+    &:focus {
+        border-color: $rn-green-500;
+        box-shadow: 0 0 0 3px rgba(46, 163, 106, 0.18);
+    }
+}
+
+textarea.rn-input {
+    resize: vertical;
+}
+
+.rn-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding-top: 18px;
+    border-top: 1px solid $rn-border;
+
+    &__hint {
+        font-size: 12px;
+        color: $rn-muted;
+    }
+}
+
+.rn-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+
+    &--primary {
+        color: $rn-white;
+        background-color: $rn-green-700;
+        border: 1px solid $rn-green-700;
+
+        &:hover,
+        &:focus {
+            color: $rn-white;
+            background-color: $rn-green-900;
+            border-color: $rn-green-900;
+        }
+    }
+
+    &--ghost {
+        color: $rn-green-700;
+        background-color: $rn-white;
+        border: 1px solid $rn-green-100;
+
+        &:hover,
+        &:focus {
+            color: $rn-green-900;
+            background-color: $rn-green-050;
+            border-color: $rn-green-500;
+        }
+    }
+}
+
+.rn-alert {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+
+    &--error {
+        color: $rn-danger;
+        background-color: $rn-danger-bg;
+        border-left: 3px solid $rn-danger;
+    }
+
+    &__list {
+        padding-left: 18px;
+        margin: 0;
+    }
+}
+
+.rn-success {
+    padding: 24px 4px 8px;
+    text-align: center;
+
+    &__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        margin-bottom: 16px;
+        font-size: 24px;
+        color: $rn-green-700;
+        background-color: $rn-green-100;
+        border-radius: 50%;
+    }
+
+    &__title {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 600;
+        color: $rn-green-900;
+    }
+
+    &__detail {
+        margin-bottom: 20px;
+        font-size: 14px;
+        color: $rn-muted;
+    }
+}
+
+.rn-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 11px;
+
+    &--draft {
+        color: $rn-muted;
+        background-color: #eef1ef;
+    }
+
+    &--submitted {
+        color: $rn-green-900;
+        background-color: $rn-green-100;
+    }
+}
+
+@media (max-width: 767px) {
+    .rn-card {
+        &__header,
+        &__body {
+            padding-left: 18px;
+            padding-right: 18px;
+        }
+    }
+}

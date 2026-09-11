@@ -1,0 +1,146 @@
+$rn-green-900: #0f4c33;
+$rn-green-700: #1b7f4b;
+$rn-green-500: #2ea36a;
+$rn-green-100: #d9efe3;
+$rn-green-050: #eef8f2;
+$rn-white: #ffffff;
+$rn-ink: #1f2a24;
+$rn-muted: #5c6b63;
+$rn-border: #dbe7e0;
+
+.rn-panel {
+    background-color: $rn-white;
+    border: 1px solid $rn-border;
+    border-radius: 10px;
+    overflow: hidden;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px;
+        border-bottom: 3px solid $rn-green-700;
+        background-color: $rn-green-050;
+    }
+
+    &__title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: $rn-green-900;
+    }
+
+    &__refresh {
+        padding: 4px 9px;
+        font-size: 13px;
+        color: $rn-green-700;
+        background-color: transparent;
+        border: 1px solid $rn-green-100;
+        border-radius: 4px;
+
+        &:hover,
+        &:focus {
+            color: $rn-green-900;
+            background-color: $rn-white;
+            border-color: $rn-green-500;
+        }
+    }
+
+    &__body {
+        padding: 6px 20px 14px;
+    }
+}
+
+.rn-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    &__item {
+        padding: 14px 0;
+        border-bottom: 1px solid $rn-border;
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    &__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    &__name {
+        font-size: 14px;
+        font-weight: 600;
+        color: $rn-ink;
+    }
+
+    &__meta {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: $rn-green-700;
+    }
+
+    &__figures {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: $rn-muted;
+    }
+
+    &__date {
+        color: $rn-muted;
+    }
+}
+
+.rn-empty {
+    padding: 26px 4px;
+    text-align: center;
+
+    &__title {
+        margin: 0 0 4px;
+        font-size: 14px;
+        font-weight: 600;
+        color: $rn-ink;
+    }
+
+    &__text {
+        margin: 0;
+        font-size: 13px;
+        color: $rn-muted;
+    }
+}
+
+.rn-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-radius: 11px;
+
+    &--draft {
+        color: $rn-muted;
+        background-color: #eef1ef;
+    }
+
+    &--submitted,
+    &--in_review {
+        color: $rn-green-900;
+        background-color: $rn-green-100;
+    }
+
+    &--approved {
+        color: $rn-white;
+        background-color: $rn-green-700;
+    }
+
+    &--rejected {
+        color: #8a3129;
+        background-color: #fdecea;
+    }
+}
