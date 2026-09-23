@@ -79,6 +79,10 @@
   .hud .tl { left: 12px; }
   .hud .tr { right: 12px; font-family: var(--mono); font-weight: 700; font-size: 22px; color: var(--mustard); }
   .hud .tr.hot { color: var(--tomato); }
+  .hud .next {
+    position: absolute; top: 58px; right: 12px; padding: 4px 10px; border-radius: 8px;
+    background: #7c4dffe0; color: #fff; font-family: var(--body); font-weight: 700; font-size: 13px;
+  }
   .hud .banner {
     position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
     max-width: calc(100% - 24px); width: max-content;
@@ -196,7 +200,7 @@
   .feed li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; font-size: 14px; }
   .feed .ts { font-family: var(--mono); color: var(--ink-soft); font-size: 12px; padding-top: 2px; }
   .feed li.ko span:last-child { color: #ffb0a9; }
-  .feed li.surprise span:last-child, .feed li.chiliGet span:last-child { color: #c9b5ff; font-weight: 600; }
+  .feed li.surprise span:last-child, .feed li.chiliGet span:last-child, .feed li.boom span:last-child { color: #c9b5ff; font-weight: 600; }
   .feed li.win span:last-child { color: var(--mustard); font-weight: 800; }
 
   /* Podio */
@@ -244,7 +248,7 @@
   <header class="marquee">
     <div class="brand">
       <h1>Rumble del Pranzo</h1>
-      <p>Ogni collega porta uno o più piatti nel ring. 60 secondi di mischia sul piatto gigante: l'ultimo rimasto in piedi decide dove si mangia oggi.</p>
+      <p>Ogni collega porta uno o più piatti nel ring. 90 secondi di mischia sul piatto gigante: l'ultimo rimasto in piedi decide dove si mangia oggi.</p>
     </div>
     <div class="today">
       Card di oggi
@@ -260,7 +264,8 @@
         <div class="hud">
           <div class="floats" id="floats"></div>
           <div class="tl" id="hud-count">Iscritti: 0</div>
-          <div class="tr" id="hud-timer">1:00</div>
+          <div class="tr" id="hud-timer">1:30</div>
+          <div class="next" id="hud-next" hidden></div>
           <div class="banner" id="hud-banner" hidden></div>
           <div class="big" id="hud-big" hidden></div>
           <div class="tag" id="hud-tag" hidden>ESEMPIO</div>
@@ -325,8 +330,8 @@
           <li><b>Fino a 5 piatti a testa.</b> Ogni piatto è un lottatore del suo ristorante: più piatti per un posto, più lottatori ha quella squadra.</li>
           <li><b>Tifo:</b> prima del gong ognuno può tifare per un piatto (non suo). Ogni tifoso lo rende più resistente, ma il tifo da solo non basta per vincere.</li>
           <li><b>Royal Rumble:</b> si parte in due, gli altri piovono dal cielo uno alla volta.</li>
-          <li><b>Sorprese a metà incontro:</b> olio sul piatto, forchettone dal cielo, peperoncino, blackout in cucina…</li>
-          <li><b>60 secondi netti.</b> Chi cade dal piatto è fuori. Podio: il vincitore e gli ultimi due eliminati.</li>
+          <li><b>Un imprevisto ogni 10 secondi,</b> mai lo stesso due volte: olio, forchettone, polpetta gigante, peperoncino, mozzarella filante, grandinata di olive, piatto che gira o si inclina, gravità zero, blackout…</li>
+          <li><b>90 secondi netti.</b> Chi cade dal piatto è fuori. Podio: il vincitore e gli ultimi due eliminati.</li>
           <li>Chiunque può suonare il gong; tutti vedono lo stesso incontro in diretta.</li>
         </ul>
       </div>
@@ -346,7 +351,7 @@
   "use strict";
 
   // ---------- Costanti ----------
-  const FIGHT_S = 60;
+  const FIGHT_S = 90;
   const DT = 1 / 60;
   const MAX_FIGHTERS = 40;
   const MAX_PER_PERSON = 5;
@@ -383,14 +388,29 @@
     (a, v) => `Che parata di ${v.emoji} ${v.dish}! ${a.emoji} ${a.dish} non ci crede.`
   ];
   const SURPRISE_TEXT = {
-    oil: "🫒 SORPRESA! Qualcuno ha rovesciato l'olio: si scivola ovunque!",
-    spin: "🍽️ SORPRESA! Il cameriere gira il piatto: tutti in centrifuga!",
-    parm: "🧀 SORPRESA! Pioggia di parmigiano: i lottatori arrancano!",
-    blackout: "💡 SORPRESA! Salta la luce in cucina… si sentono solo tonfi!",
-    fork: "🍴 SORPRESA! Un forchettone gigante cala dal cielo!",
-    chili: "🌶️ SORPRESA! Piove un peperoncino: chi lo prende diventa piccantissimo!"
+    oil: () => "💧 SORPRESA! Qualcuno ha rovesciato l'olio: si scivola ovunque!",
+    spin: () => "🍽️ SORPRESA! Il cameriere gira il piatto: tutti in centrifuga!",
+    parm: () => "🧀 SORPRESA! Pioggia di parmigiano: i lottatori arrancano!",
+    blackout: () => "💡 SORPRESA! Salta la luce in cucina… si sentono solo tonfi!",
+    fork: () => "🍴 SORPRESA! Un forchettone gigante cala dal cielo!",
+    chili: () => "🌶️ SORPRESA! Piove un peperoncino: chi lo prende diventa piccantissimo!",
+    meatball: () => "🍝 SORPRESA! Si stacca una polpetta gigante e rotola impazzita sul piatto!",
+    mozzarella: (s, F) => s.pair ? `🧵 SORPRESA! Mozzarella filante: ${F[s.pair[0]].emoji} ${F[s.pair[0]].dish} e ${F[s.pair[1]].emoji} ${F[s.pair[1]].dish} restano incollati!` : "🧵 SORPRESA! Mozzarella filante ovunque!",
+    pepper: () => "🌫️ SORPRESA! Nuvola di pepe: etcì! Tutti starnutiscono a caso!",
+    bell: () => "🛎️ SORPRESA! Il cuoco suona il campanello: tutti al centro…",
+    olives: () => "🫒 SORPRESA! Grandinata di olive sul piatto!",
+    giant: (s, F) => s.i >= 0 ? `🍞 SORPRESA! Lievito madre: ${F[s.i].emoji} ${F[s.i].dish} diventa gigante!` : "🍞 SORPRESA! Lievito madre ovunque!",
+    float: () => "🎈 SORPRESA! Soufflé impazzito: gravità zero sul piatto!",
+    tilt: () => "📐 SORPRESA! Il tavolo traballa: il piatto si inclina!"
   };
-  const SURPRISE_SHORT = { oil: "Olio sul piatto!", spin: "Il piatto gira!", parm: "Pioggia di parmigiano!", blackout: "Blackout in cucina!", fork: "Forchettone dal cielo!", chili: "Peperoncino!" };
+  const SURPRISE_SHORT = {
+    oil: "Olio sul piatto!", spin: "Il piatto gira!", parm: "Pioggia di parmigiano!", blackout: "Blackout in cucina!",
+    fork: "Forchettone dal cielo!", chili: "Peperoncino!", meatball: "Polpetta gigante!", mozzarella: "Mozzarella filante!",
+    pepper: "Etcì!", bell: "Tutti al centro!", olives: "Grandinata di olive!", giant: "Lievito madre!", float: "Gravità zero!", tilt: "Il piatto si inclina!"
+  };
+  const KO_LINKED = { fork: 1.4, meatball: 2.2, chili: 4.0 };
+  const DURATION = { oil: 6, spin: 4, parm: 5, blackout: 4, pepper: 4, bell: 5, olives: 5, giant: 6, float: 5, tilt: 5, mozzarella: 5 };
+  const SURPRISE_EVERY = 10;
   const SAMPLE = [
     { id: "s1", owner: "x1", name: "Marco", restaurant: "Trattoria da Gino", dish: "Carbonara", emoji: "🍝", move: "la presa del guanciale" },
     { id: "s2", owner: "x2", name: "Giulia", restaurant: "Trattoria da Gino", dish: "Margherita", emoji: "🍕", move: "" },
@@ -464,67 +484,93 @@
     }));
     const N = F.length;
 
-    // Ingressi stile Royal Rumble
-    const step = N > 2 ? Math.min(4, 32 / (N - 2)) : 0;
+    // Ingressi stile Royal Rumble: nella prima metà abbondante dell'incontro
+    const step = N > 2 ? Math.min(6, (FIGHT_S * 0.52) / (N - 2)) : 0;
     F.forEach((f, k) => (f.entry = k < 2 ? 0 : 2 + (k - 2) * step));
 
     // Orari delle eliminazioni: N-1, l'ultima poco prima del gong finale
-    const M = N - 1, times = [];
-    if (M === 1) times.push(57.5);
+    const M = N - 1, times = [], lastKo = FIGHT_S - 2.5;
+    if (M === 1) times.push(lastKo);
     else if (M > 1) {
-      const st = (57.5 - 7) / (M - 1);
-      for (let k = 0; k < M; k++) times.push(7 + k * st + (k < M - 1 ? (rng() - 0.5) * st * 0.6 : 0));
+      const st = (lastKo - 9) / (M - 1);
+      for (let k = 0; k < M; k++) times.push(9 + k * st + (k < M - 1 ? (rng() - 0.5) * st * 0.6 : 0));
       times.sort((a, b) => a - b);
     }
     for (let k = 0; k < M; k++) times[k] = Math.max(times[k], F[k + 1].entry + 1.6, k ? times[k - 1] + 1.3 : 0);
-    if (M > 0 && times[M - 1] > 58.6) times[M - 1] = 58.6;
+    if (M > 0 && times[M - 1] > FIGHT_S - 1.4) times[M - 1] = FIGHT_S - 1.4;
+
+    // Imprevisti: uno ogni SURPRISE_EVERY secondi, mai lo stesso due volte nello stesso incontro.
+    // Forchettone, polpetta e peperoncino "agganciano" un'eliminazione vicina e la spostano sul loro momento.
+    const surprises = [], special = new Array(Math.max(0, M)).fill(null);
+    const enteredBy = (t) => F.filter((f) => f.entry <= t - 1).length;
+    const kosBefore = (t) => times.filter((x) => x < t).length;
+    if (N >= 2) {
+      const used = new Set();
+      for (let T = SURPRISE_EVERY; T <= FIGHT_S - SURPRISE_EVERY; T += SURPRISE_EVERY) {
+        const aliveN = enteredBy(T) - kosBefore(T);
+        const snapFor = (off) => {
+          const at = T + off;
+          for (let k = 0; k < M - 1; k++) {
+            if (special[k] || times[k] < T + 0.3 || times[k] > T + 8) continue;
+            if (k > 0 && times[k - 1] > at - 1.3) continue;
+            if (times[k + 1] < at + 1.3) continue;
+            if (at < F[k + 1].entry + 1.6) continue;
+            return k;
+          }
+          return -1;
+        };
+        const options = Object.keys(SURPRISE_TEXT).filter((kind) => !used.has(kind)).filter((kind) => {
+          if (KO_LINKED[kind]) return snapFor(KO_LINKED[kind]) >= 0;
+          if (kind === "mozzarella") return aliveN >= 3;
+          if (kind === "giant") return aliveN >= 2;
+          return true;
+        });
+        if (!options.length) continue;
+        const kind = options[Math.floor(rng() * options.length)];
+        used.add(kind);
+        const s = { kind, t: T, dur: DURATION[kind] || 0, i: -1, pair: null };
+        if (KO_LINKED[kind]) { const k = snapFor(KO_LINKED[kind]); times[k] = T + KO_LINKED[kind]; special[k] = s; }
+        surprises.push(s);
+      }
+    }
 
     const events = [];
     const alive = (t) => F.map((f, i) => i).filter((i) => F[i].entry <= t - 1.2 && F[i].ko > t);
-    const kos = [];
     for (let k = 0; k < M; k++) {
-      const t = times[k], a = alive(t);
+      const t = times[k], a = alive(t), sp = special[k];
       const v = pickWeighted(rng, a, (i) => 1 / F[i].power);
-      const by = pickWeighted(rng, a.filter((i) => i !== v), (i) => F[i].power);
+      const others = a.filter((i) => i !== v);
+      let by;
+      if (sp && (sp.kind === "fork" || sp.kind === "meatball")) by = -1;
+      else if (sp && sp.kind === "chili") {
+        const early = others.filter((i) => F[i].entry <= sp.t - 1);
+        by = pickWeighted(rng, early.length ? early : others, (i) => F[i].power);
+      } else by = pickWeighted(rng, others, (i) => F[i].power);
       F[v].ko = t;
-      const e = { t, type: "ko", v, by, move: F[by].move || MOVES[Math.floor(rng() * MOVES.length)] };
-      kos.push(e); events.push(e);
+      const e = { t, type: "ko", v, by, special: sp ? sp.kind : null, move: by >= 0 ? F[by].move || MOVES[Math.floor(rng() * MOVES.length)] : "" };
+      if (sp) sp.ko = e;
+      events.push(e);
     }
 
-    // Sorprese a metà incontro: due per incontro, in due finestre
-    const surprises = [];
-    if (N >= 2) {
-      const used = new Set();
-      for (const [ws, we] of [[15, 27], [33, 45]]) {
-        const chiliKos = kos.filter((e) => !e.special && e.t >= ws + 4 && e.t <= we + 4)
-          .filter((e) => F.some((f, i) => i !== e.v && f.entry <= e.t - 5 && f.ko > e.t));
-        const forkKos = kos.filter((e) => !e.special && e.t >= ws && e.t <= we);
-        const options = ["oil", "spin", "parm", "blackout", "fork", "chili"].filter((k) => !used.has(k))
-          .filter((k) => (k === "fork" ? forkKos.length > 0 : k === "chili" ? chiliKos.length > 0 : true));
-        const kind = options[Math.floor(rng() * options.length)];
-        used.add(kind);
-        if (kind === "fork") {
-          const e = forkKos[Math.floor(rng() * forkKos.length)];
-          e.special = "fork"; e.by = -1;
-          surprises.push({ kind, t: e.t - 1.4, ko: e });
-          events.push({ t: e.t - 1.4, type: "surprise", kind });
-        } else if (kind === "chili") {
-          const e = chiliKos[Math.floor(rng() * chiliKos.length)];
-          const t0 = e.t - 4;
-          const cands = F.map((f, i) => i).filter((i) => i !== e.v && F[i].entry <= t0 - 1 && F[i].ko > e.t);
-          const by = pickWeighted(rng, cands, (i) => F[i].power);
-          e.special = "chili"; e.by = by; e.move = "una fiammata al peperoncino";
-          const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 0.45;
-          surprises.push({ kind, t: t0, by, px: Math.cos(a) * r, py: Math.sin(a) * r, get: t0 + 1.6, until: e.t });
-          events.push({ t: t0, type: "surprise", kind });
-          events.push({ t: t0 + 1.6, type: "chiliGet", i: by });
-        } else {
-          const dur = { oil: 6, spin: 4, parm: 5, blackout: 4 }[kind];
-          const t = ws + rng() * Math.max(0.5, we - ws - dur);
-          surprises.push({ kind, t, dur });
-          events.push({ t, type: "surprise", kind });
-        }
+    // Protagonisti e dettagli di ogni imprevisto
+    for (const s of surprises) {
+      const onPlate = alive(s.t + 0.01).filter((i) => F[i].entry <= s.t - 0.8);
+      const lasting = onPlate.filter((i) => F[i].ko > s.t + s.dur);
+      if (s.kind === "chili") {
+        const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 0.45;
+        Object.assign(s, { by: s.ko.by, px: Math.cos(a) * r, py: Math.sin(a) * r, get: s.t + 1.6, until: s.ko.t });
+        events.push({ t: s.get, type: "chiliGet", i: s.by });
       }
+      if (s.kind === "meatball") s.a = rng() * Math.PI * 2;
+      if (s.kind === "giant") { const pool = lasting.length ? lasting : onPlate; if (pool.length) s.i = pickWeighted(rng, pool, (i) => F[i].power); }
+      if (s.kind === "mozzarella") {
+        const pool = lasting.length >= 2 ? lasting : onPlate;
+        if (pool.length >= 2) { const a = pool[Math.floor(rng() * pool.length)], rest = pool.filter((i) => i !== a); s.pair = [a, rest[Math.floor(rng() * rest.length)]]; }
+      }
+      if (s.kind === "olives") s.drops = Array.from({ length: 9 }, (_, k) => { const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 0.75; return { t: s.t + 0.4 + k * 0.5, x: Math.cos(a) * r, y: Math.sin(a) * r, black: rng() < 0.4 }; });
+      if (s.kind === "tilt") { const a = rng() * Math.PI * 2; s.dx = Math.cos(a); s.dy = Math.sin(a); }
+      events.push({ t: s.t, type: "surprise", s });
+      if (s.kind === "bell") events.push({ t: s.t + 3, type: "boom" });
     }
 
     // Finte: cariche senza eliminazione nei momenti morti
@@ -545,7 +591,7 @@
     F.forEach((f, i) => events.push({ t: f.entry + 0.4, type: "enter", i, line: Math.floor(rng() * ENTRY_LINES.length) }));
     const fav = F.map((f, i) => i).filter((i) => (F[i].cheers || 0) > 0).sort((a, b) => F[b].cheers - F[a].cheers)[0];
     if (fav !== undefined) events.push({ t: 0.2, type: "crowd", i: fav });
-    if (N > 0) events.push({ t: 50, type: "last10" });
+    if (N > 0) events.push({ t: FIGHT_S - 10, type: "last10" });
     events.sort((a, b) => a.t - b.t);
 
     const winner = F.findIndex((f) => f.ko === Infinity);
@@ -556,23 +602,52 @@
     // Fisica pre-calcolata frame per frame
     const frames = Math.ceil((FIGHT_S + 4) / DT);
     const pos = new Float32Array(frames * N * 2);
+    const ball = new Float32Array(frames * 2).fill(NaN);
     const x = new Float32Array(N), y = new Float32Array(N), vx = new Float32Array(N), vy = new Float32Array(N);
-    const tx = new Float32Array(N), ty = new Float32Array(N), next = new Float32Array(N);
+    const tx = new Float32Array(N), ty = new Float32Array(N), next = new Float32Array(N), mul = new Float32Array(N);
     const flying = new Uint8Array(N), landed = new Uint8Array(N);
     const R = radiusFor(N);
     const charges = events.filter((e) => e.type === "ko" || e.type === "save");
-    const timed = surprises.filter((s) => s.dur);
-    const chili = surprises.find((s) => s.kind === "chili");
+    const on = (kind) => surprises.find((s) => s.kind === kind);
+    const chili = on("chili"), meat = on("meatball"), bell = on("bell"), pep = on("pepper"), ol = on("olives"), moz = on("mozzarella"), giant = on("giant");
+    const inWin = (s, t) => s && t >= s.t && t < s.t + s.dur;
+    let bx = 0, bz = 0, bvx = 0, bvz = 0, ballOn = false;
     let ci = 0;
     for (let fr = 0; fr < frames; fr++) {
       const t = fr * DT;
-      let damp = 0.965, spMul = 1, accMul = 1, spin = 0;
-      for (const s of timed) {
-        if (t < s.t || t >= s.t + s.dur) continue;
+      let damp = 0.965, spMul = 1, accMul = 1, spin = 0, gx = 0, gy = 0, extraCap = 0;
+      for (const s of surprises) {
+        if (!inWin(s, t)) continue;
         if (s.kind === "oil") { damp = 0.992; spMul = 1.5; accMul = 0.45; }
-        if (s.kind === "spin") spin = 1.7;
+        if (s.kind === "spin") { spin = 1.7; extraCap = 0.6; }
         if (s.kind === "parm") spMul = 0.45;
+        if (s.kind === "float") spMul = 0.6;
+        if (s.kind === "tilt") { gx = s.dx * 1.1; gy = s.dy * 1.1; }
+        if (s.kind === "pepper") extraCap = 0.5;
       }
+      mul.fill(1);
+      if (giant && giant.i >= 0 && t >= giant.t + 0.3 && t < giant.t + giant.dur - 0.3) mul[giant.i] = 1.8;
+      const bellPull = inWin(bell, t) && t < bell.t + 3;
+      const bellBoom = bell && bell.t + 3 >= t && bell.t + 3 < t + DT;
+      if (bell && t >= bell.t + 3 && t < bell.t + 3.6) extraCap = 1.1;
+      const sneeze = inWin(pep, t) && Math.floor((t - pep.t) / 0.6) !== Math.floor((t - DT - pep.t) / 0.6);
+      const ready = (i) => landed[i] && !flying[i] && t >= F[i].entry + 0.7;
+
+      // polpetta gigante: insegue la sua vittima e travolge chi incontra
+      if (meat && t >= meat.t && t < meat.t + 4.5) {
+        const e = meat.ko;
+        if (!ballOn) { ballOn = true; bx = Math.cos(meat.a) * 0.95; bz = Math.sin(meat.a) * 0.95; }
+        if (t < e.t) { const rem = Math.max(DT, e.t - t); bvx = (x[e.v] - bx) / rem; bvz = (y[e.v] - bz) / rem; }
+        else { const sp = Math.hypot(bvx, bvz) || 1; if (sp < 1.3) { bvx *= 1.3 / sp; bvz *= 1.3 / sp; } }
+        bx += bvx * DT; bz += bvz * DT;
+        ball[fr * 2] = bx; ball[fr * 2 + 1] = bz;
+        for (let j = 0; j < N; j++) {
+          if (j === e.v || !ready(j)) continue;
+          const dx = x[j] - bx, dz = y[j] - bz, d = Math.hypot(dx, dz);
+          if (d > 0 && d < R * mul[j] + 0.11) { vx[j] = (dx / d) * 0.9; vy[j] = (dz / d) * 0.9; }
+        }
+      }
+
       while (ci < charges.length && charges[ci].t < t - 0.01) ci++;
       const act = ci < charges.length && charges[ci].t - t <= 1.0 ? charges[ci] : null;
       if (act && act.t >= t && act.t < t + DT) {
@@ -580,11 +655,21 @@
         const rl = Math.hypot(x[v], y[v]) || 1, rx = x[v] / rl, ry = y[v] / rl;
         let dx = rx, dy = ry, d = 1;
         if (b >= 0) { dx = x[v] - x[b]; dy = y[v] - y[b]; d = Math.hypot(dx, dy) || 1; }
+        else if (act.special === "meatball") { dx = bvx; dy = bvz; d = Math.hypot(dx, dy) || 1; }
         if (act.type === "ko") {
           const ux = dx / d + rx, uy = dy / d + ry, ul = Math.hypot(ux, uy) || 1;
           vx[v] = (ux / ul) * 1.1; vy[v] = (uy / ul) * 1.1; flying[v] = 1;
         } else { vx[v] = -rx * 1.3; vy[v] = -ry * 1.3; }
         if (b >= 0) { vx[b] = -(dx / d) * 0.7; vy[b] = -(dy / d) * 0.7; }
+      }
+      // olive che cadono: chi è vicino all'impatto viene sbalzato
+      if (ol) for (const dr of ol.drops) {
+        if (dr.t < t || dr.t >= t + DT) continue;
+        for (let j = 0; j < N; j++) {
+          if (!ready(j)) continue;
+          const dx = x[j] - dr.x, dz = y[j] - dr.y, d = Math.hypot(dx, dz);
+          if (d < R * mul[j] + 0.2) { const k = d || 1; vx[j] = (dx / k) * 1.0; vy[j] = (dz / k) * 1.0; }
+        }
       }
       for (let i = 0; i < N; i++) {
         const f = F[i];
@@ -592,13 +677,14 @@
         if (!landed[i]) { x[i] = Math.cos(f.ang) * f.land; y[i] = Math.sin(f.ang) * f.land; landed[i] = 1; }
         if (t < f.entry + 0.7) continue; // ancora in volo verso il piatto
         if (flying[i]) { x[i] += vx[i] * DT; y[i] += vy[i] * DT; vx[i] *= 0.985; vy[i] *= 0.985; continue; }
-        let maxS = (t > 50 ? 0.85 : 0.6) * spMul, acc = 3.2 * accMul, free = false;
+        let maxS = (t > FIGHT_S - 10 ? 0.85 : 0.6) * spMul, acc = 3.2 * accMul, free = false;
         const isVictim = act && act.v === i && act.t > t && act.by >= 0;
         const chasing = chili && chili.by === i && t >= chili.t && t < chili.get;
         if (isVictim) {
           const rl = Math.hypot(x[i], y[i]) || 1; tx[i] = (x[i] / rl) * 0.97; ty[i] = (y[i] / rl) * 0.97; maxS = 0.55; free = true;
         } else if (chasing) { tx[i] = chili.px; ty[i] = chili.py; maxS = 1.8; acc = 9; }
         else if (act && act.by === i && act.t > t) { tx[i] = x[act.v]; ty[i] = y[act.v]; maxS = 1.7; acc = 9; }
+        else if (bellPull) { tx[i] = 0; ty[i] = 0; maxS = 1.1; acc = 6; }
         else if (t >= next[i]) {
           const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 0.7;
           tx[i] = Math.cos(a) * r; ty[i] = Math.sin(a) * r; next[i] = t + 1 + rng() * 1.8;
@@ -606,17 +692,27 @@
         const ax = tx[i] - x[i], ay = ty[i] - y[i], d = Math.hypot(ax, ay);
         if (d > 0.002) { vx[i] += (ax / d) * acc * DT; vy[i] += (ay / d) * acc * DT; }
         if (spin) { vx[i] += -y[i] * spin * DT; vy[i] += x[i] * spin * DT; }
+        vx[i] += gx * DT; vy[i] += gy * DT;
+        if (sneeze) { const a = rng() * Math.PI * 2; vx[i] += Math.cos(a) * 0.9; vy[i] += Math.sin(a) * 0.9; }
+        if (bellBoom) { const rl = Math.hypot(x[i], y[i]) || 1; vx[i] = (x[i] / rl) * 1.5; vy[i] = (y[i] / rl) * 1.5; }
         for (let j = 0; j < N; j++) {
           if (j === i || flying[j] || t < F[j].entry + 0.7) continue;
-          const px = x[i] - x[j], py = y[i] - y[j], pd = Math.hypot(px, py);
-          if (pd > 0 && pd < R * 2.1) { const k = (R * 2.1 - pd) * 14 * DT; vx[i] += (px / pd) * k; vy[i] += (py / pd) * k; }
+          const px = x[i] - x[j], py = y[i] - y[j], pd = Math.hypot(px, py), lim = (R * mul[i] + R * mul[j]) * 1.05;
+          if (pd > 0 && pd < lim) { const k = (lim - pd) * 14 * DT * (mul[j] > 1 ? 2.5 : 1); vx[i] += (px / pd) * k; vy[i] += (py / pd) * k; }
+        }
+        if (inWin(moz, t) && moz.pair && moz.pair.includes(i)) {
+          const o = moz.pair[0] === i ? moz.pair[1] : moz.pair[0];
+          if (ready(o)) {
+            const dx = x[o] - x[i], dz = y[o] - y[i], dd = Math.hypot(dx, dz), L = R * 2.4;
+            if (dd > L) { const k = (dd - L) * 5 * DT; vx[i] += (dx / dd) * k; vy[i] += (dz / dd) * k; }
+          }
         }
         vx[i] *= damp; vy[i] *= damp;
-        const s = Math.hypot(vx[i], vy[i]), cap = spin ? maxS + 0.6 : maxS;
+        const s = Math.hypot(vx[i], vy[i]), cap = maxS + extraCap;
         if (s > cap) { vx[i] *= cap / s; vy[i] *= cap / s; }
         x[i] += vx[i] * DT; y[i] += vy[i] * DT;
         if (!free) {
-          const rl = Math.hypot(x[i], y[i]), lim = 0.9 - R * 0.5;
+          const rl = Math.hypot(x[i], y[i]), lim = 0.9 - R * 0.5 * mul[i];
           if (rl > lim) {
             x[i] *= lim / rl; y[i] *= lim / rl;
             const dot = (vx[i] * x[i] + vy[i] * y[i]) / lim;
@@ -627,7 +723,12 @@
       const base = fr * N * 2;
       for (let i = 0; i < N; i++) { pos[base + i * 2] = x[i]; pos[base + i * 2 + 1] = y[i]; }
     }
-    return { id: ++simSerial, F, N, events, charges, surprises, podium, winner, pos, frames };
+    return { id: ++simSerial, F, N, events, charges, surprises, podium, winner, pos, ball, frames };
+  }
+  // 0..1 dentro la finestra di un imprevisto, con rampe di entrata e uscita
+  function winK(s, t, r = 0.5) {
+    if (!s || !s.dur || t < s.t || t >= s.t + s.dur) return 0;
+    return clamp01((t - s.t) / r) * clamp01((s.t + s.dur - t) / r);
   }
   function simPos(sim, i, t) {
     const fr = Math.max(0, Math.min(sim.frames - 2, t / DT));
@@ -1084,6 +1185,31 @@
     const pod = new T.Mesh(G.cone, M("#d8261c")); pod.scale.set(0.35, 1.3, 0.35); pod.rotation.z = Math.PI; pod.position.y = 0.65; fx.chili.add(pod);
     const stem = new T.Mesh(G.cyl, M("#3f8f3a")); stem.scale.set(0.08, 0.35, 0.08); stem.position.y = 1.4; fx.chili.add(stem);
     fx.chili.traverse((o) => { o.castShadow = true; }); fx.chili.visible = false; scene.add(fx.chili);
+    fx.UP = new T.Vector3(0, 1, 0);
+    // polpetta gigante
+    fx.meat = new T.Group(); fx.meatInner = new T.Group(); fx.meat.add(fx.meatInner);
+    part(G.sph, "#6b3a1f", 1.45, 1.45, 1.45, 0, 0, 0, fx.meatInner);
+    part(G.hemiUp, "#c8321f", 1.2, 0.65, 1.2, 0, 0.75, 0, fx.meatInner);
+    part(G.sph, "#3f8f3a", 0.3, 0.07, 0.18, 0.1, 1.42, 0.1, fx.meatInner);
+    fx.meat.visible = false; scene.add(fx.meat);
+    // filo di mozzarella
+    fx.moz = new T.Mesh(G.cyl, M("#fff8e7")); fx.moz.visible = false; scene.add(fx.moz);
+    // olive
+    fx.olives = Array.from({ length: 9 }, () => { const m = new T.Mesh(G.sph, M("#55662a")); m.scale.set(0.6, 0.45, 0.45); m.castShadow = true; m.visible = false; scene.add(m); return m; });
+    // campanello del cuoco e onda d'urto
+    fx.bell = new T.Group();
+    part(new T.CylinderGeometry(0.9, 1.7, 1.9, 28, 1, true), "#e8b93a", 1, 1, 1, 0, 0, 0, fx.bell, true);
+    part(G.hemiUp, "#e8b93a", 0.9, 0.6, 0.9, 0, 0.95, 0, fx.bell);
+    part(G.sph, "#e8b93a", 0.3, 0.3, 0.3, 0, 1.75, 0, fx.bell);
+    part(G.sph, "#b8862a", 0.35, 0.35, 0.35, 0, -0.9, 0, fx.bell);
+    fx.bell.visible = false; scene.add(fx.bell);
+    fx.wave = new T.Mesh(new T.TorusGeometry(1, 0.05, 6, 72), new T.MeshBasicMaterial({ color: "#ffd84a", transparent: true, opacity: 0.8, depthWrite: false }));
+    fx.wave.rotation.x = Math.PI / 2; fx.wave.position.y = 0.4; fx.wave.visible = false; scene.add(fx.wave);
+    // nuvola di pepe
+    const pep = new Float32Array(500 * 3);
+    for (let k = 0; k < 500; k++) { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 10; pep[k * 3] = Math.cos(a) * r; pep[k * 3 + 1] = 0.5 + Math.random() * 5; pep[k * 3 + 2] = Math.sin(a) * r; }
+    const pg = new T.BufferGeometry(); pg.setAttribute("position", new T.BufferAttribute(pep, 3));
+    fx.pepper = new T.Points(pg, new T.PointsMaterial({ color: "#3d3a38", size: 0.2 })); fx.pepper.visible = false; scene.add(fx.pepper);
     return true;
   }
 
@@ -1134,7 +1260,9 @@
     const showLabels = sim.N <= 12;
     let act = null;
     for (const e of sim.charges) if (t >= e.t - 1 && t < e.t + 0.15) { act = e; break; }
-    const chili = sim.surprises.find((x) => x.kind === "chili");
+    const on = (kind) => sim.surprises.find((x) => x.kind === kind);
+    const chili = on("chili"), giant = on("giant"), flt = on("float"), tilt = on("tilt"), pep = on("pepper"), moz = on("mozzarella");
+    const tk = winK(tilt, t, 0.6), fk = winK(flt, t, 0.5);
     const endPhase = t >= FIGHT_S;
     const pt = t - FIGHT_S;
     const spread = Math.max(3.4, s * 1.55);
@@ -1176,6 +1304,13 @@
         else if (act.v === i && act.by === -1 && act.t - t < 0.8) P.arms = "up";
       }
       if (chili && i === chili.by && t >= chili.get && t < chili.until + 0.2) { P.aura = true; P.scale = s * 1.25; }
+      if (t < f.ko && ta >= 0.7) {
+        const gk = giant && giant.i === i ? winK(giant, t, 0.5) : 0;
+        if (gk) P.scale *= 1 + 0.8 * gk;
+        if (fk) { P.y = (P.y || 0) + fk * (1.4 + Math.sin(now / 380 + i) * 0.5); if (!P.arms) P.arms = "up"; }
+        if (tk) P.y = (P.y || 0) - Math.sin(0.12 * tk) * (tilt.dx * P.x + tilt.dy * P.z);
+        if (winK(pep, t, 0.01) && (t - pep.t) % 0.6 < 0.25 && !P.arms) P.arms = "flail";
+      }
       if (endPhase) {
         const rank = sim.podium.indexOf(i);
         P.aura = false;
@@ -1192,6 +1327,23 @@
         }
       }
       applyPose(c, P);
+    }
+
+    // filo di mozzarella tra i due incollati
+    fx.moz.visible = false;
+    if (moz && moz.pair && winK(moz, t, 0.01)) {
+      const [a, b] = moz.pair, Fa = sim.F[a], Fb = sim.F[b];
+      if (t < Fa.ko && t < Fb.ko && t >= Fa.entry + 0.7 && t >= Fb.entry + 0.7) {
+        const pa = cs[a].root.position, pb = cs[b].root.position, h = 0.8 * s;
+        const A = new T.Vector3(pa.x, pa.y + h, pa.z), B = new T.Vector3(pb.x, pb.y + h, pb.z);
+        const dir = B.clone().sub(A), len = dir.length();
+        if (len > 0.01) {
+          fx.moz.position.copy(A.add(B).multiplyScalar(0.5));
+          fx.moz.scale.set(0.28, len, 0.28);
+          fx.moz.quaternion.setFromUnitVectors(fx.UP, dir.normalize());
+          fx.moz.visible = true;
+        }
+      }
     }
 
     // podio
@@ -1220,8 +1372,9 @@
       fx.oil.material.opacity = 0.55 * (1 - clamp01((k - oil.dur) / 1));
     } else fx.oil.visible = false;
     // piatto che gira
-    const spin = on("spin");
-    arenaSpin.rotation.y = spin && t >= spin.t && t < spin.t + spin.dur ? Math.PI * 2 * ease((t - spin.t) / spin.dur) : 0;
+    const spin = on("spin"), tilt = on("tilt"), tk = winK(tilt, t, 0.6);
+    const spinA = spin && t >= spin.t && t < spin.t + spin.dur ? Math.PI * 2 * ease((t - spin.t) / spin.dur) : 0;
+    arenaSpin.rotation.set(tk ? 0.12 * tk * tilt.dy : 0, spinA, tk ? -0.12 * tk * tilt.dx : 0);
     // parmigiano
     const parm = on("parm");
     if (parm && t >= parm.t && t < parm.t + parm.dur) {
@@ -1254,6 +1407,45 @@
       fx.chili.rotation.set(0, now * 0.004, k < 1 ? 0 : Math.sin(now * 0.02) * 0.2);
       fx.chili.scale.setScalar(1.3);
     }
+    // polpetta gigante
+    const meat = on("meatball");
+    fx.meat.visible = false;
+    if (meat && t >= meat.t && t < meat.t + 4.5) {
+      const fr = Math.min(sim.frames - 1, Math.floor(t / DT)), bx = sim.ball[fr * 2], bz = sim.ball[fr * 2 + 1];
+      if (!Number.isNaN(bx)) {
+        const pf = Math.max(0, fr - 3), px = sim.ball[pf * 2], pz = sim.ball[pf * 2 + 1], r = Math.hypot(bx, bz);
+        const drop = r > 1.12 ? Math.min(3, (r - 1.12) * 8) : 0;
+        fx.meat.visible = true;
+        fx.meat.scale.setScalar(ease(clamp01((t - meat.t) / 0.3)));
+        fx.meat.position.set(bx * 10, 1.45 - drop, bz * 10);
+        if (!Number.isNaN(px) && (bx !== px || bz !== pz)) fx.meat.rotation.y = Math.atan2(bx - px, bz - pz);
+        fx.meatInner.rotation.x = (t - meat.t) * 7;
+      }
+    }
+    // grandinata di olive
+    const ol = on("olives");
+    fx.olives.forEach((m, k) => {
+      const d = ol && ol.drops[k];
+      if (!d || t < d.t - 0.5 || t >= ol.t + ol.dur + 0.5) { m.visible = false; return; }
+      const f = clamp01((d.t - t) / 0.5);
+      m.visible = true; m.material = M(d.black ? "#1f1f1f" : "#55662a");
+      m.position.set(d.x * 10, 0.45 + 14 * f * f, d.y * 10); m.rotation.y = k;
+    });
+    // campanello del cuoco
+    const bell = on("bell");
+    fx.bell.visible = fx.wave.visible = false;
+    if (bell && t >= bell.t && t < bell.t + bell.dur + 0.8) {
+      const kin = ease(clamp01((t - bell.t) / 0.6)), kout = ease(clamp01((t - bell.t - bell.dur) / 0.8));
+      fx.bell.visible = true;
+      fx.bell.position.set(0, 24 - 16.5 * kin + 17 * kout, -2);
+      fx.bell.rotation.z = Math.sin((t - bell.t) * 11) * (t < bell.t + 3.3 ? 0.3 : 0.08);
+      const w = t - (bell.t + 3);
+      if (w >= 0 && w < 0.7) { fx.wave.visible = true; const r = 1 + (w / 0.7) * 11; fx.wave.scale.set(r, r, 1); fx.wave.material.opacity = 0.85 * (1 - w / 0.7); }
+    }
+    // nuvola di pepe
+    const pep = on("pepper"), pk = winK(pep, t, 0.4);
+    fx.pepper.visible = pk > 0;
+    if (pk) { fx.pepper.rotation.y = t * 1.4; fx.pepper.position.y = Math.sin(t * 3) * 0.4; fx.pepper.material.size = 0.2 * pk + 0.02; }
   }
 
   // ---------- HUD e telecronaca ----------
@@ -1264,12 +1456,14 @@
     if (e.type === "ko") {
       const v = F[e.v];
       if (e.special === "fork") return `Il forchettone infilza ${v.emoji} ${v.dish} e lo lancia fuori dal piatto!`;
+      if (e.special === "meatball") return `La polpetta gigante travolge ${v.emoji} ${v.dish} e lo butta giù dal piatto!`;
       const a = F[e.by];
       if (e.special === "chili") return `${a.emoji} ${a.dish}, in fiamme, spazza via ${v.emoji} ${v.dish}!`;
       return `${a.emoji} ${a.dish} elimina ${v.emoji} ${v.dish} con ${e.move}!`;
     }
     if (e.type === "save") return SAVE_LINES[e.line](F[e.by], F[e.v]);
-    if (e.type === "surprise") return SURPRISE_TEXT[e.kind];
+    if (e.type === "surprise") return SURPRISE_TEXT[e.s.kind](e.s, F);
+    if (e.type === "boom") return "💥 BOOM! Il campanello spara tutti lontano dal centro!";
     if (e.type === "chiliGet") return `${F[e.i].emoji} ${F[e.i].dish} ingoia il peperoncino e prende fuoco! 🔥`;
     if (e.type === "crowd") return `📣 Gli spalti sono tutti per ${F[e.i].emoji} ${F[e.i].dish}: ${F[e.i].cheers} ${F[e.i].cheers === 1 ? "tifoso" : "tifosi"}!`;
     if (e.type === "last10") return "Ultimi 10 secondi! Si mena duro.";
@@ -1289,7 +1483,7 @@
     if (sim && t < 0) bigText = String(Math.ceil(-t));
     else if (sim && t >= 0 && t < 0.9) bigText = "GONG!";
     else if (sim && t >= FIGHT_S && t < FIGHT_S + 1.6) bigText = "FINE!";
-    else if (sim) for (const e of sim.events) { if (e.t > t) break; if (e.type === "surprise" && t - e.t < 1.4) { bigText = SURPRISE_SHORT[e.kind]; small = true; } }
+    else if (sim) for (const e of sim.events) { if (e.t > t) break; if (e.type === "surprise" && t - e.t < 1.4) { bigText = SURPRISE_SHORT[e.s.kind]; small = true; } }
     big.hidden = bigText === null;
     if (bigText !== null) { big.textContent = bigText; big.classList.toggle("small", small); }
 
@@ -1297,22 +1491,26 @@
     if (sim && t >= 0) {
       for (const e of sim.events) {
         if (e.t > t) break;
-        if (["enter", "ko", "chiliGet"].includes(e.type) && t - e.t < 1.8) shown = e;
+        if (["enter", "ko", "chiliGet", "boom"].includes(e.type) && t - e.t < 1.8) shown = e;
         if (e.type === "surprise" && t - e.t < 3) shown = e;
         if (e.type === "win" && t >= e.t) shown = e;
       }
     }
     if (shown) {
       banner.hidden = false;
-      banner.className = "banner" + (shown.type === "ko" ? " ko" : shown.type === "surprise" || shown.type === "chiliGet" ? " surprise" : "");
+      banner.className = "banner" + (shown.type === "ko" ? " ko" : ["surprise", "chiliGet", "boom"].includes(shown.type) ? " surprise" : "");
       const f = sim.F;
       banner.textContent = shown.type === "enter" ? `#${f[shown.i].num} ${f[shown.i].emoji} ${f[shown.i].dish} entra!`
         : shown.type === "ko" ? `${f[shown.v].emoji} ${f[shown.v].dish} è fuori!`
-        : shown.type === "surprise" ? SURPRISE_TEXT[shown.kind].replace(/^\S+ SORPRESA! /, "")
+        : shown.type === "surprise" ? SURPRISE_TEXT[shown.s.kind](shown.s, f).replace(/^\S+ SORPRESA! /, "")
+        : shown.type === "boom" ? "BOOM! Tutti sparati via dal centro!"
         : shown.type === "chiliGet" ? `${f[shown.i].emoji} ${f[shown.i].dish} è piccantissimo!`
         : `Oggi si va da ${f[shown.i].restaurant}`;
     } else banner.hidden = true;
     $("hud-tag").hidden = !(playback?.mode === "demo" || (!sim && !entries.length));
+    const nextS = sim && t >= 0 && t < FIGHT_S ? sim.events.find((e) => e.type === "surprise" && e.t > t) : null;
+    $("hud-next").hidden = !nextS;
+    if (nextS) $("hud-next").textContent = `❓ Imprevisto tra ${Math.ceil(nextS.t - t)}s`;
 
     if (sim) {
       const past = sim.events.filter((e) => e.t <= t);
@@ -1338,7 +1536,7 @@
     if (!sound || !audio) return;
     const now = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
     o.connect(g); g.connect(audio.destination);
-    const spec = { ko: [140, 60, 0.35, "square"], enter: [520, 780, 0.18, "triangle"], win: [392, 784, 0.9, "sawtooth"], save: [300, 360, 0.12, "triangle"], last10: [880, 880, 0.25, "square"], surprise: [220, 880, 0.5, "sawtooth"], chiliGet: [600, 1200, 0.3, "square"] }[type];
+    const spec = { ko: [140, 60, 0.35, "square"], enter: [520, 780, 0.18, "triangle"], win: [392, 784, 0.9, "sawtooth"], save: [300, 360, 0.12, "triangle"], last10: [880, 880, 0.25, "square"], surprise: [220, 880, 0.5, "sawtooth"], chiliGet: [600, 1200, 0.3, "square"], boom: [90, 40, 0.6, "square"] }[type];
     if (!spec) return;
     o.type = spec[3]; o.frequency.setValueAtTime(spec[0], now); o.frequency.exponentialRampToValueAtTime(spec[1], now + spec[2]);
     g.gain.setValueAtTime(0.12, now); g.gain.exponentialRampToValueAtTime(0.001, now + spec[2]);
