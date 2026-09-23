@@ -1,0 +1,1055 @@
+<title>Rumble del Pranzo</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  /* Una sola scena: l'arena di notte. Tema unico, colori espliciti. */
+  :root {
+    color-scheme: dark;
+    --night: #17122a;
+    --night-2: #211a3a;
+    --night-3: #2d2450;
+    --line: #3d3366;
+    --ink: #f6efe3;
+    --ink-soft: #b9afd0;
+    --mustard: #ffc23d;
+    --tomato: #e8453c;
+    --basil: #3fa35b;
+    --cloth: #d63a33;
+    --cloth-2: #f7ecdc;
+    --display: "Bungee", "Impact", "Arial Black", sans-serif;
+    --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "Consolas", monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { background: var(--night); color: var(--ink); }
+  body {
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.45;
+    padding: 0 16px;
+    padding-block: 20px 48px;
+    background:
+      radial-gradient(1200px 500px at 50% -120px, #3a2a6b 0%, transparent 70%),
+      var(--night);
+    min-height: 100%;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 22px; }
+
+  header.marquee {
+    display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px;
+    border-bottom: 2px dashed var(--line); padding-bottom: 16px;
+  }
+  .brand h1 {
+    font-family: var(--display); font-weight: 400; margin: 0;
+    font-size: clamp(30px, 6vw, 58px); line-height: .95; letter-spacing: .01em;
+    color: var(--mustard);
+    text-shadow: 3px 3px 0 var(--tomato), 6px 6px 0 #00000055;
+    text-wrap: balance;
+  }
+  .brand p { margin: 8px 0 0; color: var(--ink-soft); max-width: 60ch; }
+  .today {
+    font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--ink-soft); text-align: right;
+  }
+  .today strong { display: block; color: var(--ink); font-size: 18px; letter-spacing: .02em; }
+  .conn { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); display: inline-block; }
+  .conn.live i { background: var(--basil); box-shadow: 0 0 0 3px #3fa35b33; }
+  .conn.local i { background: var(--mustard); }
+
+  .main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 880px) { .main { grid-template-columns: 1fr; } }
+
+  /* Arena */
+  .arena-card { display: grid; gap: 12px; }
+  .stage {
+    position: relative; width: 100%; aspect-ratio: 1 / 1; max-width: 100%;
+    border-radius: 18px; overflow: hidden;
+    box-shadow: 0 0 0 3px var(--night-3), 0 20px 60px #0008;
+    background: var(--cloth);
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .hud { position: absolute; inset: 0; pointer-events: none; font-family: var(--display); }
+  .hud .tl, .hud .tr {
+    position: absolute; top: 12px; padding: 6px 12px; border-radius: 10px;
+    background: #17122ae0; color: var(--ink); font-size: 14px; letter-spacing: .03em;
+  }
+  .hud .tl { left: 12px; }
+  .hud .tr { right: 12px; font-family: var(--mono); font-weight: 700; font-size: 22px; color: var(--mustard); }
+  .hud .tr.hot { color: var(--tomato); }
+  .hud .banner {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    max-width: calc(100% - 24px); width: max-content;
+    background: var(--mustard); color: var(--night); padding: 8px 14px; border-radius: 10px;
+    font-size: clamp(12px, 2.2vw, 16px); text-align: center; line-height: 1.2;
+    box-shadow: 4px 4px 0 var(--tomato);
+  }
+  .hud .banner.ko { background: var(--tomato); color: #fff; box-shadow: 4px 4px 0 var(--night); }
+  .hud .big {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: clamp(56px, 16vw, 140px); color: var(--mustard);
+    text-shadow: 5px 5px 0 var(--tomato), 10px 10px 0 #0007;
+  }
+  .hud .tag {
+    position: absolute; left: 12px; bottom: 14px; padding: 4px 10px; border-radius: 6px;
+    background: var(--night); color: var(--mustard); font-size: 12px; letter-spacing: .12em;
+  }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .hint { color: var(--ink-soft); font-size: 13px; }
+
+  button, .btn {
+    font-family: var(--display); font-size: 15px; letter-spacing: .02em;
+    border: 0; border-radius: 12px; padding: 12px 18px; cursor: pointer;
+    background: var(--mustard); color: var(--night);
+    box-shadow: 0 4px 0 #b3821b;
+    transition: transform .08s ease, box-shadow .08s ease, filter .15s;
+  }
+  button:hover { filter: brightness(1.06); }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 #b3821b; }
+  button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  button.red { background: var(--tomato); color: #fff; box-shadow: 0 4px 0 #9b2520; }
+  button.ghost {
+    background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line);
+    font-family: var(--body); font-weight: 600; font-size: 14px; padding: 9px 14px;
+  }
+  button.ghost:active { box-shadow: inset 0 0 0 2px var(--line); }
+  button.small { padding: 6px 10px; font-size: 13px; }
+  :focus-visible { outline: 3px solid var(--mustard); outline-offset: 2px; }
+
+  /* Pannelli */
+  .panel {
+    background: var(--night-2); border: 1px solid var(--line); border-radius: 18px;
+    padding: 18px; display: grid; gap: 14px;
+  }
+  .panel h2 {
+    font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0; letter-spacing: .02em;
+    color: var(--ink); text-wrap: balance;
+  }
+  .panel h2 small { font-family: var(--body); font-size: 13px; color: var(--ink-soft); font-weight: 400; margin-left: 6px; letter-spacing: 0; }
+  .side { display: grid; gap: 22px; }
+
+  form { display: grid; gap: 12px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } }
+  label { display: grid; gap: 5px; font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-soft); font-weight: 600; }
+  input {
+    font: inherit; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--ink);
+    background: var(--night); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%;
+  }
+  input:focus { border-color: var(--mustard); outline: none; box-shadow: 0 0 0 3px #ffc23d33; }
+  .emoji-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .emoji-pick button {
+    font-family: inherit; font-size: 20px; padding: 4px; width: 38px; height: 38px; border-radius: 10px;
+    background: var(--night); box-shadow: inset 0 0 0 1px var(--line); line-height: 1;
+  }
+  .emoji-pick button[aria-pressed="true"] { background: var(--night-3); box-shadow: inset 0 0 0 2px var(--mustard); }
+  .form-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .msg { font-size: 13px; color: var(--ink-soft); min-height: 1.2em; }
+  .msg.err { color: #ff8f86; }
+
+  /* Iscritti per ristorante */
+  .teams { display: grid; gap: 14px; }
+  .team { display: grid; gap: 6px; }
+  .team-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; }
+  .team-head .sw { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+  .team-head .n { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+  .fighter {
+    display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center;
+    padding: 8px 10px; border-radius: 12px; background: var(--night);
+  }
+  .fighter .em { font-size: 26px; text-align: center; line-height: 1; }
+  .fighter .dish { font-weight: 600; overflow-wrap: anywhere; }
+  .fighter .who { font-size: 12.5px; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .fighter .who em { color: var(--mustard); font-style: normal; }
+  .fighter .acts { display: flex; gap: 6px; }
+  .late { font-size: 11px; font-family: var(--mono); color: var(--mustard); text-transform: uppercase; letter-spacing: .08em; }
+  .empty { color: var(--ink-soft); font-size: 14px; padding: 6px 0; }
+
+  /* Telecronaca */
+  .feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow-y: auto; }
+  .feed li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; font-size: 14px; }
+  .feed .ts { font-family: var(--mono); color: var(--ink-soft); font-size: 12px; padding-top: 2px; }
+  .feed li.ko span:last-child { color: #ffb0a9; }
+  .feed li.win span:last-child { color: var(--mustard); font-weight: 800; }
+
+  /* Podio */
+  .podium-wrap { display: grid; gap: 14px; }
+  .verdict {
+    font-family: var(--display); font-size: clamp(20px, 3.6vw, 30px); line-height: 1.1; margin: 0;
+    color: var(--ink); text-wrap: balance;
+  }
+  .verdict b { color: var(--mustard); font-weight: 400; }
+  .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: end; }
+  .step { display: grid; gap: 6px; text-align: center; }
+  .step .em { font-size: clamp(34px, 7vw, 54px); line-height: 1; }
+  .step .dish { font-weight: 800; font-size: 14px; overflow-wrap: anywhere; }
+  .step .who { font-size: 12px; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .step .block {
+    border-radius: 10px 10px 4px 4px; display: grid; place-items: center;
+    font-family: var(--display); font-size: 28px; color: var(--night);
+  }
+  .step.p1 .block { height: 120px; background: var(--mustard); }
+  .step.p2 .block { height: 86px; background: #d9d4e8; }
+  .step.p3 .block { height: 62px; background: #d98c4a; }
+  .step.p1 { order: 2; } .step.p2 { order: 1; } .step.p3 { order: 3; }
+
+  /* Albo d'oro */
+  .fame { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .fame li { display: grid; grid-template-columns: 92px 34px 1fr; gap: 10px; align-items: center; padding: 8px 10px; background: var(--night); border-radius: 10px; }
+  .fame .d { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+  .fame .e { font-size: 24px; text-align: center; }
+  .fame .r { font-weight: 700; overflow-wrap: anywhere; }
+  .fame .r small { display: block; font-weight: 400; color: var(--ink-soft); font-size: 12.5px; }
+  .tally { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--night-3); }
+  .chip b { font-family: var(--mono); color: var(--mustard); margin-left: 4px; }
+
+  .rules { color: var(--ink-soft); font-size: 13.5px; margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+  .rules b { color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="marquee">
+    <div class="brand">
+      <h1>Rumble del Pranzo</h1>
+      <p>Ogni collega porta un piatto nel ring. 60 secondi di mischia sul piatto gigante: l'ultimo rimasto in piedi decide dove si mangia oggi.</p>
+    </div>
+    <div class="today">
+      Card di oggi
+      <strong id="today-label">—</strong>
+      <span class="conn" id="conn"><i></i><span id="conn-label">Connessione…</span></span>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="arena-card" aria-label="Arena">
+      <div class="stage" id="stage">
+        <canvas id="cv" aria-label="Arena del combattimento"></canvas>
+        <div class="hud">
+          <div class="tl" id="hud-count">Sul piatto: 0</div>
+          <div class="tr" id="hud-timer">1:00</div>
+          <div class="banner" id="hud-banner" hidden></div>
+          <div class="big" id="hud-big" hidden></div>
+          <div class="tag" id="hud-tag" hidden>ESEMPIO</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="btn-gong" type="button">Suona il gong</button>
+        <button id="btn-replay" type="button" class="ghost" hidden>Rivedi l'incontro</button>
+        <button id="btn-rematch" type="button" class="ghost" hidden>Rivincita</button>
+        <button id="btn-demo" type="button" class="ghost">Incontro di prova</button>
+        <button id="btn-sound" type="button" class="ghost" aria-pressed="false">Audio: spento</button>
+      </div>
+      <div class="hint" id="gong-hint"></div>
+
+      <div class="panel podium-wrap" id="podium-panel" hidden>
+        <p class="verdict" id="verdict"></p>
+        <div class="podium" id="podium"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Telecronaca <small id="feed-sub">in attesa del gong</small></h2>
+        <ul class="feed" id="feed"><li><span class="ts">—</span><span>Le luci si abbassano, i piatti si scaldano…</span></li></ul>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <h2 id="form-title">Sali sul ring</h2>
+        <form id="entry-form" autocomplete="off">
+          <div class="row2">
+            <label for="f-name">Il tuo nome<input id="f-name" name="name" required maxlength="40" placeholder="Giulia"></label>
+            <label for="f-rest">Ristorante<input id="f-rest" name="restaurant" required maxlength="50" list="rest-list" placeholder="Trattoria da Gino"></label>
+          </div>
+          <datalist id="rest-list"></datalist>
+          <label for="f-dish">Il piatto che proponi<input id="f-dish" name="dish" required maxlength="60" placeholder="Carbonara"></label>
+          <label for="f-move">Mossa speciale <span style="text-transform:none;letter-spacing:0">(facoltativa)</span><input id="f-move" name="move" maxlength="50" placeholder="la presa del guanciale"></label>
+          <div>
+            <label style="margin-bottom:6px">Lottatore</label>
+            <div class="emoji-pick" id="emoji-pick" role="group" aria-label="Scegli l'emoji del tuo piatto"></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="btn-save">Entra nella mischia</button>
+            <button type="button" class="ghost" id="btn-withdraw" hidden>Ritira il piatto</button>
+          </div>
+          <div class="msg" id="form-msg"></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Iscritti di oggi <small id="roster-sub"></small></h2>
+        <div class="teams" id="teams"><div class="empty">Ancora nessuno sul ring.</div></div>
+      </div>
+
+      <div class="panel">
+        <h2>Regolamento</h2>
+        <ul class="rules">
+          <li><b>Un piatto a testa.</b> Ogni iscritto è un lottatore del suo ristorante: più colleghi scelgono lo stesso posto, più lottatori ha quella squadra.</li>
+          <li><b>Royal Rumble:</b> si parte in due, gli altri entrano uno alla volta a intervalli regolari.</li>
+          <li><b>60 secondi netti.</b> Chi cade dal piatto è fuori. L'ultimo rimasto vince.</li>
+          <li><b>Podio:</b> 1° il vincitore, 2° e 3° gli ultimi due eliminati.</li>
+          <li>Chiunque può suonare il gong; tutti vedono lo stesso incontro in diretta.</li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <h2>Albo d'oro</h2>
+        <div class="tally" id="tally"></div>
+        <ul class="fame" id="fame"><li><span class="d">—</span><span class="e">🏆</span><span class="r">Nessun incontro ancora<small>Il primo vincitore finirà qui.</small></span></li></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Costanti ----------
+  const FIGHT_S = 60;
+  const DT = 1 / 60;
+  const MAX_FIGHTERS = 40;
+  const TEAM_COLORS = ["#2f7fd8", "#3fa35b", "#8b4fd6", "#e07b1f", "#1aa6a0", "#d6457a", "#6c7a1d", "#4556c9", "#b0553a", "#0f8a5f"];
+  const EMOJIS = ["🍕","🍝","🍔","🍣","🍜","🥗","🥙","🌯","🌮","🍛","🍚","🥟","🥪","🍗","🥩","🍲","🐟","🍟","🌭","🧀","🍳","🥘","🍱","🍽️"];
+  const EMOJI_WORDS = [
+    [/pizz|margherit|diavola|calzone/i, "🍕"], [/sushi|uramaki|nigiri|sashimi|maki/i, "🍣"],
+    [/ramen|udon|noodle|pho|soba/i, "🍜"], [/pok[eè]|insalat|salad|bowl/i, "🥗"],
+    [/burger|hamburger|panino con hamb/i, "🍔"], [/kebab|gyros|falafel/i, "🥙"],
+    [/piadin|burrito|wrap/i, "🌯"], [/taco|nacho/i, "🌮"], [/curry|tikka|masala/i, "🍛"],
+    [/risott|riso|rice/i, "🍚"], [/raviol|gyoza|dumpling|tortellin/i, "🥟"],
+    [/panin|tramezz|toast|sandwich|focacc/i, "🥪"], [/poll|chicken|pollo/i, "🍗"],
+    [/bistecc|carne|tagliat|steak|fiorentin/i, "🥩"], [/zupp|minestr|ribollit|soup/i, "🍲"],
+    [/pesce|orata|branzin|salmon|tonno|fish/i, "🐟"], [/patatin|fritt|fries/i, "🍟"],
+    [/hot ?dog|wurst/i, "🌭"], [/formagg|cheese|burrat|mozzar/i, "🧀"], [/uov|egg|frittat/i, "🍳"],
+    [/paell|lasagn|parmigian/i, "🥘"], [/bento|giappon/i, "🍱"],
+    [/past|spaghet|carbonar|amatric|gricia|cacio|pesto|tagliatell|penn|rigaton|lingu|gnocch|orecchiett|bucatin/i, "🍝"]
+  ];
+  const MOVES = [
+    "un colpo di mattarello", "la presa del parmigiano", "una cascata di besciamella", "il gomito alla carbonara",
+    "lo schiaffo di mozzarella", "una spallata al pomodoro", "il suplex del risotto", "la leva articolare al rosmarino",
+    "un calcio rotante all'olio d'oliva", "la clothesline di spaghetti", "il piledriver al peperoncino", "un placcaggio di polenta"
+  ];
+  const ENTRY_LINES = [
+    (f) => `#${f.num} ${f.emoji} ${f.dish} salta tra le corde!`,
+    (f) => `#${f.num} ${f.emoji} ${f.dish} arriva di corsa dalla cucina!`,
+    (f) => `#${f.num} ${f.emoji} ${f.dish} entra tra i cori dei fan di ${f.restaurant}!`,
+    (f) => `#${f.num} ${f.emoji} ${f.dish} si toglie il grembiule ed entra!`
+  ];
+  const SAVE_LINES = [
+    (a, v) => `${v.emoji} ${v.dish} sull'orlo del piatto… si aggrappa alla forchetta e resta dentro!`,
+    (a, v) => `${a.emoji} ${a.dish} carica ${v.emoji} ${v.dish}, ma rimbalza sul bordo!`,
+    (a, v) => `Che parata di ${v.emoji} ${v.dish}! ${a.emoji} ${a.dish} non ci crede.`
+  ];
+  const SAMPLE = [
+    { id: "s1", name: "Marco", restaurant: "Trattoria da Gino", dish: "Carbonara", emoji: "🍝", move: "la presa del guanciale" },
+    { id: "s2", name: "Giulia", restaurant: "Trattoria da Gino", dish: "Margherita", emoji: "🍕", move: "" },
+    { id: "s3", name: "Luca", restaurant: "Sushi Zen", dish: "Uramaki salmone", emoji: "🍣", move: "il colpo di bacchette" },
+    { id: "s4", name: "Sara", restaurant: "Sushi Zen", dish: "Ramen tonkotsu", emoji: "🍜", move: "" },
+    { id: "s5", name: "Paolo", restaurant: "Bun Bun", dish: "Smash burger", emoji: "🍔", move: "lo smash sul bordo" },
+    { id: "s6", name: "Elena", restaurant: "Piadineria Rimini", dish: "Piadina crudo e squacquerone", emoji: "🌯", move: "" },
+    { id: "s7", name: "Andrea", restaurant: "Poke House", dish: "Poke tonno", emoji: "🥗", move: "" }
+  ];
+
+  // ---------- Utilità ----------
+  const $ = (id) => document.getElementById(id);
+  const todayKey = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const fmtDate = (k) => {
+    const [y, m, d] = k.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
+  };
+  const fmtShort = (k) => {
+    const [y, m, d] = k.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "2-digit" });
+  };
+  const fmtClock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  const restKey = (r) => String(r || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const safeSeg = (s) => String(s).replace(/[^A-Za-z0-9_\-~:@+]/g, "_").slice(0, 120) || "anon";
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  };
+  const guessEmoji = (dish) => { for (const [re, e] of EMOJI_WORDS) if (re.test(dish)) return e; return "🍽️"; };
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pickWeighted = (rng, items, w) => {
+    const tot = items.reduce((s, it) => s + w(it), 0);
+    let r = rng() * tot;
+    for (const it of items) { r -= w(it); if (r <= 0) return it; }
+    return items[items.length - 1];
+  };
+  function teamColors(list) {
+    const keys = [...new Set(list.map((e) => restKey(e.restaurant)))].sort();
+    const map = {};
+    keys.forEach((k, i) => (map[k] = TEAM_COLORS[i % TEAM_COLORS.length]));
+    return map;
+  }
+
+  // ---------- Simulazione (deterministica: stesso seed = stesso incontro per tutti) ----------
+  function simulate(roster, seed) {
+    const rng = mulberry32(seed);
+    const colors = teamColors(roster);
+    const idx = roster.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    const F = idx.map((ri, k) => ({
+      ...roster[ri], num: k + 1, color: colors[restKey(roster[ri].restaurant)],
+      power: 0.6 + rng() * 0.8, ang: rng() * Math.PI * 2, entry: 0, ko: Infinity, koBy: -1
+    }));
+    const N = F.length;
+
+    // Ingressi stile Royal Rumble
+    const step = N > 2 ? Math.min(4, 32 / (N - 2)) : 0;
+    F.forEach((f, k) => (f.entry = k < 2 ? 0 : 2 + (k - 2) * step));
+
+    // Orari delle eliminazioni: N-1, l'ultima poco prima del gong finale
+    const M = N - 1, times = [];
+    if (M === 1) times.push(57.5);
+    else if (M > 1) {
+      const st = (57.5 - 7) / (M - 1);
+      for (let k = 0; k < M; k++) times.push(7 + k * st + (k < M - 1 ? (rng() - 0.5) * st * 0.6 : 0));
+      times.sort((a, b) => a - b);
+    }
+    for (let k = 0; k < M; k++) {
+      times[k] = Math.max(times[k], F[k + 1].entry + 1.6, k ? times[k - 1] + 1.3 : 0);
+    }
+    if (M > 0 && times[M - 1] > 58.6) times[M - 1] = 58.6;
+
+    const events = [];
+    const alive = (t) => F.map((f, i) => i).filter((i) => F[i].entry <= t - 1.2 && F[i].ko > t);
+    for (let k = 0; k < M; k++) {
+      const t = times[k], a = alive(t);
+      const v = pickWeighted(rng, a, (i) => 1 / F[i].power);
+      const others = a.filter((i) => i !== v);
+      const by = pickWeighted(rng, others, (i) => F[i].power);
+      F[v].ko = t; F[v].koBy = by;
+      events.push({ t, type: "ko", v, by, move: F[by].move || MOVES[Math.floor(rng() * MOVES.length)] });
+    }
+    // Finte: cariche senza eliminazione nei momenti morti
+    const koTimes = [1.5, ...times, FIGHT_S - 0.6];
+    for (let k = 0; k < koTimes.length - 1; k++) {
+      let t = koTimes[k] + 3.2;
+      while (t < koTimes[k + 1] - 1.6) {
+        const a = alive(t);
+        if (a.length >= 2) {
+          const v = a[Math.floor(rng() * a.length)];
+          const others = a.filter((i) => i !== v);
+          const by = others[Math.floor(rng() * others.length)];
+          events.push({ t, type: "save", v, by, line: Math.floor(rng() * SAVE_LINES.length) });
+        }
+        t += 2.6 + rng() * 2.2;
+      }
+    }
+    F.forEach((f, i) => { if (N > 1 || i === 0) events.push({ t: f.entry + 0.4, type: "enter", i, line: Math.floor(rng() * ENTRY_LINES.length) }); });
+    if (N > 0) events.push({ t: 50, type: "last10" });
+    events.sort((a, b) => a.t - b.t);
+
+    const winner = F.findIndex((f) => f.ko === Infinity);
+    const byKo = F.map((f, i) => i).filter((i) => F[i].ko !== Infinity).sort((a, b) => F[b].ko - F[a].ko);
+    const podium = [winner, byKo[0], byKo[1]].filter((i) => i !== undefined && i >= 0);
+    events.push({ t: FIGHT_S, type: "win", i: winner });
+
+    // Fisica pre-calcolata frame per frame
+    const frames = Math.ceil((FIGHT_S + 4) / DT);
+    const pos = new Float32Array(frames * N * 2);
+    const x = new Float32Array(N), y = new Float32Array(N), vx = new Float32Array(N), vy = new Float32Array(N);
+    const tx = new Float32Array(N), ty = new Float32Array(N), next = new Float32Array(N), flying = new Uint8Array(N);
+    const R = radiusFor(N);
+    F.forEach((f, i) => { x[i] = Math.cos(f.ang) * 1.75; y[i] = Math.sin(f.ang) * 1.75; });
+    const charges = events.filter((e) => e.type === "ko" || e.type === "save");
+    let ci = 0;
+    for (let fr = 0; fr < frames; fr++) {
+      const t = fr * DT;
+      while (ci < charges.length && charges[ci].t < t - 0.01) ci++;
+      const act = ci < charges.length && charges[ci].t - t <= 1.0 ? charges[ci] : null;
+      // impatto
+      if (act && act.t >= t && act.t < t + DT) {
+        const v = act.v, b = act.by;
+        let dx = x[v] - x[b], dy = y[v] - y[b], d = Math.hypot(dx, dy) || 1;
+        const rl = Math.hypot(x[v], y[v]) || 1, rx = x[v] / rl, ry = y[v] / rl;
+        if (act.type === "ko") {
+          let ux = dx / d + rx, uy = dy / d + ry; const ul = Math.hypot(ux, uy) || 1;
+          vx[v] = (ux / ul) * 2.4; vy[v] = (uy / ul) * 2.4; flying[v] = 1;
+        } else {
+          vx[v] = -rx * 1.3; vy[v] = -ry * 1.3;
+        }
+        vx[b] = -(dx / d) * 0.7; vy[b] = -(dy / d) * 0.7;
+      }
+      for (let i = 0; i < N; i++) {
+        const f = F[i];
+        if (t < f.entry) continue;
+        if (flying[i]) { x[i] += vx[i] * DT; y[i] += vy[i] * DT; vx[i] *= 0.992; vy[i] *= 0.992; continue; }
+        const entering = t < f.entry + 1.0;
+        let maxS = t > 50 ? 0.85 : 0.6, acc = 3.2, free = entering;
+        if (entering) { tx[i] = Math.cos(f.ang) * 0.5; ty[i] = Math.sin(f.ang) * 0.5; maxS = 1.8; acc = 7; }
+        else if (act && act.by === i && act.t > t) { tx[i] = x[act.v]; ty[i] = y[act.v]; maxS = 1.7; acc = 9; }
+        else if (act && act.v === i && act.t > t) {
+          const rl = Math.hypot(x[i], y[i]) || 1; tx[i] = (x[i] / rl) * 0.97; ty[i] = (y[i] / rl) * 0.97; maxS = 0.55; free = true;
+        } else if (t >= next[i]) {
+          const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 0.7;
+          tx[i] = Math.cos(a) * r; ty[i] = Math.sin(a) * r; next[i] = t + 1 + rng() * 1.8;
+        }
+        let ax = tx[i] - x[i], ay = ty[i] - y[i]; const d = Math.hypot(ax, ay);
+        if (d > 0.002) { vx[i] += (ax / d) * acc * DT; vy[i] += (ay / d) * acc * DT; }
+        // repulsione
+        for (let j = 0; j < N; j++) {
+          if (j === i || flying[j] || t < F[j].entry) continue;
+          const px = x[i] - x[j], py = y[i] - y[j], pd = Math.hypot(px, py);
+          if (pd > 0 && pd < R * 2.1) { const k = (R * 2.1 - pd) * 14 * DT; vx[i] += (px / pd) * k; vy[i] += (py / pd) * k; }
+        }
+        vx[i] *= 0.965; vy[i] *= 0.965;
+        const s = Math.hypot(vx[i], vy[i]);
+        if (s > maxS) { vx[i] *= maxS / s; vy[i] *= maxS / s; }
+        x[i] += vx[i] * DT; y[i] += vy[i] * DT;
+        if (!free) {
+          const rl = Math.hypot(x[i], y[i]);
+          if (rl > 0.9 - R * 0.5) {
+            const lim = 0.9 - R * 0.5;
+            x[i] *= lim / rl; y[i] *= lim / rl;
+            const dot = (vx[i] * x[i] + vy[i] * y[i]) / rl;
+            if (dot > 0) { vx[i] -= (x[i] / rl) * dot * 1.6; vy[i] -= (y[i] / rl) * dot * 1.6; }
+          }
+        }
+      }
+      const base = fr * N * 2;
+      for (let i = 0; i < N; i++) { pos[base + i * 2] = x[i]; pos[base + i * 2 + 1] = y[i]; }
+    }
+    return { F, N, events, podium, winner, pos, frames };
+  }
+  function radiusFor(n) { return Math.max(0.075, Math.min(0.14, 0.17 - n * 0.0035)); }
+
+  // ---------- Archivio: db condiviso se disponibile, altrimenti solo questo browser ----------
+  function localBackend() {
+    const KEY = "rumble-local-db";
+    const read = () => { try { return JSON.parse(store.get(KEY) || "{}"); } catch { return {}; } };
+    const write = (o) => store.set(KEY, JSON.stringify(o));
+    const subs = new Set();
+    const emit = () => subs.forEach((fn) => fn());
+    return {
+      mode: "local",
+      onEntries(day, cb) { const fn = () => cb(Object.values(read()[`e:${day}`] || {})); subs.add(fn); fn(); },
+      async saveEntry(day, id, data) { const o = read(); (o[`e:${day}`] ||= {})[id] = { ...data, id }; write(o); emit(); },
+      async deleteEntry(day, id) { const o = read(); if (o[`e:${day}`]) delete o[`e:${day}`][id]; write(o); emit(); },
+      onDay(day, cb) { const fn = () => cb(read()[`d:${day}`] || null); subs.add(fn); fn(); },
+      async setDay(day, data) { const o = read(); o[`d:${day}`] = data; write(o); emit(); },
+      onHistory(cb) { const fn = () => { const o = read(); cb(Object.keys(o).filter((k) => k.startsWith("d:")).map((k) => o[k])); }; subs.add(fn); fn(); }
+    };
+  }
+  function dbBackend(db) {
+    return {
+      mode: "live",
+      onEntries(day, cb) {
+        db.collection(`days/${day}/entries`).onSnapshot((s) => cb(s.docs.map((d) => ({ ...d.data(), id: d.id }))), () => {});
+      },
+      saveEntry: (day, id, data) => db.doc(`days/${day}/entries/${id}`).set(data),
+      deleteEntry: (day, id) => db.doc(`days/${day}/entries/${id}`).delete(),
+      onDay(day, cb) { db.doc(`days/${day}`).onSnapshot((s) => cb(s.exists ? s.data() : null), () => {}); },
+      setDay: (day, data) => db.doc(`days/${day}`).set(data),
+      onHistory(cb) { db.collection("days").orderBy("date", "desc").limit(30).onSnapshot((s) => cb(s.docs.map((d) => d.data())), () => {}); }
+    };
+  }
+
+  // ---------- Stato ----------
+  let backend = null;
+  let myId = store.get("rumble-me") || (() => { const id = "l" + Math.random().toString(36).slice(2, 12); store.set("rumble-me", id); return id; })();
+  let entries = [];
+  let dayDoc = null;
+  let history = [];
+  let chosenEmoji = null;
+  let emojiTouched = false;
+  let playback = null; // { sim, startAt, mode: "live" | "replay" | "demo", key }
+  let simCache = { key: null, sim: null };
+  let sound = false;
+  let audio = null;
+  let lastFeedCount = -1;
+  let lastSoundEvent = -1;
+  let confirmRematch = false;
+
+  // ---------- Canvas ----------
+  const cv = $("cv"), ctx = cv.getContext("2d");
+  let S = 600, dpr = 1;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function resize() {
+    const r = $("stage").getBoundingClientRect();
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    S = Math.max(200, r.width);
+    cv.width = Math.round(S * dpr); cv.height = Math.round(S * dpr);
+    bg = null;
+  }
+  new ResizeObserver(resize).observe($("stage"));
+
+  let bg = null;
+  function drawBackground() {
+    if (bg && bg.width === cv.width) { ctx.drawImage(bg, 0, 0, S, S); return; }
+    bg = document.createElement("canvas"); bg.width = cv.width; bg.height = cv.height;
+    const g = bg.getContext("2d"); g.scale(dpr, dpr);
+    // tovaglia a quadri
+    const q = S / 12;
+    g.fillStyle = "#f7ecdc"; g.fillRect(0, 0, S, S);
+    for (let r = 0; r < 12; r++) for (let c = 0; c < 12; c++) {
+      if ((r + c) % 2 === 0) { g.fillStyle = "#d63a33"; g.fillRect(c * q, r * q, q, q); }
+      else if (r % 2 === 0) { g.fillStyle = "#e8a19b"; g.fillRect(c * q, r * q, q, q); }
+    }
+    const cx = S / 2, u = S * 0.4;
+    // ombra piatto
+    g.fillStyle = "#00000040"; g.beginPath(); g.ellipse(cx + 6, cx + 10, u * 1.1, u * 1.1, 0, 0, Math.PI * 2); g.fill();
+    // posate
+    g.save(); g.translate(cx - u * 1.18, cx); g.fillStyle = "#c9c4d6";
+    g.fillRect(-4, -u * 0.55, 8, u * 1.1); for (let k = -1; k <= 1; k++) g.fillRect(k * 7 - 2, -u * 0.72, 4, u * 0.22); g.restore();
+    g.save(); g.translate(cx + u * 1.18, cx); g.fillStyle = "#c9c4d6";
+    g.beginPath(); g.roundRect(-5, -u * 0.72, 10, u * 1.3, 5); g.fill(); g.restore();
+    // piatto
+    const rim = g.createRadialGradient(cx, cx, u * 0.9, cx, cx, u * 1.1);
+    rim.addColorStop(0, "#e9e6f0"); rim.addColorStop(1, "#ffffff");
+    g.fillStyle = rim; g.beginPath(); g.arc(cx, cx, u * 1.1, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#3a5fa8"; g.lineWidth = 2.5; g.beginPath(); g.arc(cx, cx, u * 1.05, 0, Math.PI * 2); g.stroke();
+    const inner = g.createRadialGradient(cx - u * 0.2, cx - u * 0.2, 0, cx, cx, u);
+    inner.addColorStop(0, "#ffffff"); inner.addColorStop(1, "#ece8f3");
+    g.fillStyle = inner; g.beginPath(); g.arc(cx, cx, u * 0.98, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#d8d2e6"; g.lineWidth = 1.5; g.beginPath(); g.arc(cx, cx, u * 0.98, 0, Math.PI * 2); g.stroke();
+    // "corde" del ring: tre anelli tratteggiati
+    g.setLineDash([10, 8]); g.strokeStyle = "#e8453c"; g.lineWidth = 2;
+    g.beginPath(); g.arc(cx, cx, u * 0.94, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+    ctx.drawImage(bg, 0, 0, S, S);
+  }
+
+  function drawFighter(f, px, py, r, opts = {}) {
+    const { alpha = 1, rot = 0, scale = 1, label = false, glow = false } = opts;
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(px, py);
+    ctx.fillStyle = "#00000033"; ctx.beginPath(); ctx.ellipse(3, r * 0.9, r * 0.9, r * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.rotate(rot); ctx.scale(scale, scale);
+    if (glow) { ctx.shadowColor = "#ffc23d"; ctx.shadowBlur = 24; }
+    ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = Math.max(2, r * 0.12); ctx.strokeStyle = "#ffffff"; ctx.stroke();
+    ctx.font = `${Math.round(r * 1.15)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(f.emoji || "🍽️", 0, r * 0.06);
+    ctx.restore();
+    if (label) {
+      ctx.save(); ctx.globalAlpha = alpha;
+      const txt = f.dish.length > 16 ? f.dish.slice(0, 15) + "…" : f.dish;
+      ctx.font = `600 ${Math.max(10, Math.round(r * 0.42))}px "Bricolage Grotesque", system-ui, sans-serif`;
+      const w = ctx.measureText(txt).width + 10, h = Math.max(15, r * 0.6);
+      ctx.fillStyle = "#17122ad9"; ctx.beginPath(); ctx.roundRect(px - w / 2, py + r + 4, w, h, 6); ctx.fill();
+      ctx.fillStyle = "#f6efe3"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(txt, px, py + r + 4 + h / 2 + 1);
+      ctx.restore();
+    }
+  }
+
+  // ---------- Scena ----------
+  function idleRoster() { return entries.length ? entries : SAMPLE; }
+  function drawIdle(now) {
+    const list = idleRoster().slice(0, MAX_FIGHTERS);
+    const colors = teamColors(list);
+    const n = list.length, R = radiusFor(n), cx = S / 2, u = S * 0.4;
+    list.forEach((e, i) => {
+      const a = (i / n) * Math.PI * 2 + now / 9000;
+      const rr = n === 1 ? 0 : 0.58;
+      const bob = reduceMotion ? 0 : Math.sin(now / 350 + i) * 0.015;
+      drawFighter({ ...e, color: colors[restKey(e.restaurant)] }, cx + Math.cos(a) * rr * u, cx + Math.sin(a) * rr * u + bob * u, R * u, { label: n <= 14 });
+    });
+  }
+
+  const confetti = [];
+  function drawFight(sim, t, now) {
+    const cx = S / 2, u = S * 0.4, R = radiusFor(sim.N) * u;
+    const fr = Math.max(0, Math.min(sim.frames - 2, t / DT));
+    const f0 = Math.floor(fr), a = fr - f0;
+    // scossa sul KO
+    let shake = 0;
+    for (const e of sim.events) if (e.type === "ko" && t >= e.t && t < e.t + 0.3) shake = (1 - (t - e.t) / 0.3) * 7;
+    ctx.save();
+    if (shake && !reduceMotion) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    drawBackground();
+    const order = sim.F.map((_, i) => i).sort((i, j) => (sim.pos[f0 * sim.N * 2 + i * 2 + 1] - sim.pos[f0 * sim.N * 2 + j * 2 + 1]));
+    for (const i of order) {
+      const f = sim.F[i];
+      if (t < f.entry - 0.05) continue;
+      if (t > f.ko + 1.6) continue;
+      const b0 = f0 * sim.N * 2 + i * 2, b1 = b0 + sim.N * 2;
+      const px = cx + (sim.pos[b0] * (1 - a) + sim.pos[b1] * a) * u;
+      const py = cx + (sim.pos[b0 + 1] * (1 - a) + sim.pos[b1 + 1] * a) * u;
+      const out = t >= f.ko;
+      const isWin = t >= FIGHT_S && i === sim.winner;
+      const scale = isWin ? 1.35 + (reduceMotion ? 0 : Math.sin(now / 160) * 0.08) : out ? 1 + (t - f.ko) * 0.4 : 1;
+      drawFighter(f, px, py, R, {
+        alpha: out ? Math.max(0, 1 - (t - f.ko) / 1.6) : 1,
+        rot: out ? (t - f.ko) * 9 : 0, scale, glow: isWin,
+        label: !out && (sim.N <= 12 || t >= FIGHT_S)
+      });
+      if (out && t < f.ko + 0.8) {
+        ctx.save(); ctx.globalAlpha = 1 - (t - f.ko) / 0.8;
+        ctx.font = `${Math.round(R * 0.9)}px Bungee, Impact, sans-serif`; ctx.textAlign = "center";
+        ctx.fillStyle = "#e8453c"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 4;
+        const ky = py - R * 1.4 - (t - f.ko) * 30;
+        ctx.strokeText("KO!", px, ky); ctx.fillText("KO!", px, ky); ctx.restore();
+      }
+    }
+    // coriandoli finali
+    if (t >= FIGHT_S && !reduceMotion) {
+      if (confetti.length < 160) for (let k = 0; k < 4; k++) confetti.push({ x: Math.random() * S, y: -10, vy: 1 + Math.random() * 2.5, vx: (Math.random() - 0.5) * 1.5, c: ["#ffc23d", "#e8453c", "#3fa35b", "#2f7fd8", "#fff"][k % 5], r: Math.random() * 6 });
+      for (const p of confetti) { p.x += p.vx; p.y += p.vy; p.r += 0.1; if (p.y > S + 10) { p.y = -10; p.x = Math.random() * S; } ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-4, -2, 8, 4); ctx.restore(); }
+    }
+    ctx.restore();
+  }
+
+  // ---------- HUD e telecronaca ----------
+  function eventText(sim, e) {
+    const F = sim.F;
+    if (e.type === "enter") return ENTRY_LINES[e.line](F[e.i]);
+    if (e.type === "ko") { const a = F[e.by], v = F[e.v]; return `${a.emoji} ${a.dish} elimina ${v.emoji} ${v.dish} con ${e.move}!`; }
+    if (e.type === "save") return SAVE_LINES[e.line](F[e.by], F[e.v]);
+    if (e.type === "last10") return "Ultimi 10 secondi! Si mena duro.";
+    if (e.type === "win") { const w = F[e.i]; return `${w.emoji} ${w.dish} vince la Rumble! Oggi si mangia da ${w.restaurant}.`; }
+    return "";
+  }
+  function updateHud(sim, t) {
+    const inRing = sim ? sim.F.filter((f) => t >= f.entry && t < f.ko).length : idleRoster().length;
+    $("hud-count").textContent = sim ? `Sul piatto: ${inRing} · Iscritti: ${sim.N}` : `Iscritti: ${entries.length}`;
+    const left = sim ? Math.max(0, Math.min(FIGHT_S, FIGHT_S - t)) : FIGHT_S;
+    const timer = $("hud-timer");
+    timer.textContent = fmtClock(Math.ceil(left));
+    timer.classList.toggle("hot", !!sim && t > 50 && t < FIGHT_S);
+
+    const big = $("hud-big"), banner = $("hud-banner");
+    if (sim && t < 0) { big.hidden = false; big.textContent = Math.ceil(-t); }
+    else if (sim && t >= 0 && t < 0.9) { big.hidden = false; big.textContent = "GONG!"; }
+    else if (sim && t >= FIGHT_S && t < FIGHT_S + 2.5) { big.hidden = false; big.textContent = "FINE!"; }
+    else big.hidden = true;
+
+    let shown = null;
+    if (sim && t >= 0) {
+      for (const e of sim.events) {
+        if (e.t > t) break;
+        if ((e.type === "enter" || e.type === "ko") && t - e.t < 1.8) shown = e;
+        if (e.type === "win" && t >= e.t) shown = e;
+      }
+    }
+    if (shown) {
+      banner.hidden = false;
+      banner.className = "banner" + (shown.type === "ko" ? " ko" : "");
+      const f = sim.F;
+      banner.textContent = shown.type === "enter" ? `#${f[shown.i].num} ${f[shown.i].emoji} ${f[shown.i].dish} entra!`
+        : shown.type === "ko" ? `${f[shown.v].emoji} ${f[shown.v].dish} è fuori!`
+        : `Oggi si va da ${f[shown.i].restaurant}`;
+    } else banner.hidden = true;
+    $("hud-tag").hidden = !(playback?.mode === "demo" || (!sim && !entries.length));
+
+    // telecronaca
+    if (sim) {
+      const past = sim.events.filter((e) => e.t <= t);
+      if (past.length !== lastFeedCount) {
+        lastFeedCount = past.length;
+        const feed = $("feed"); feed.textContent = "";
+        past.slice().reverse().forEach((e) => {
+          const li = document.createElement("li"); li.className = e.type;
+          const ts = document.createElement("span"); ts.className = "ts"; ts.textContent = fmtClock(Math.min(FIGHT_S, e.t));
+          const tx = document.createElement("span"); tx.textContent = eventText(sim, e);
+          li.append(ts, tx); feed.append(li);
+        });
+        if (!past.length) { const li = document.createElement("li"); li.innerHTML = '<span class="ts">—</span><span>I lottatori si scaldano a bordo piatto…</span>'; feed.append(li); }
+        const newest = past[past.length - 1];
+        if (newest && past.length - 1 > lastSoundEvent) { lastSoundEvent = past.length - 1; if (t - newest.t < 0.5) sfx(newest.type); }
+      }
+      $("feed-sub").textContent = playback.mode === "demo" ? "incontro di prova" : playback.mode === "replay" ? "replica" : t >= FIGHT_S ? "incontro concluso" : t >= 0 ? "in diretta" : "sta per iniziare";
+    }
+  }
+
+  // ---------- Suoni (solo dopo un click) ----------
+  function sfx(type) {
+    if (!sound || !audio) return;
+    const now = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+    o.connect(g); g.connect(audio.destination);
+    const spec = { ko: [140, 60, 0.35, "square"], enter: [520, 780, 0.18, "triangle"], win: [392, 784, 0.9, "sawtooth"], save: [300, 360, 0.12, "triangle"], last10: [880, 880, 0.25, "square"] }[type];
+    if (!spec) return;
+    o.type = spec[3]; o.frequency.setValueAtTime(spec[0], now); o.frequency.exponentialRampToValueAtTime(spec[1], now + spec[2]);
+    g.gain.setValueAtTime(0.12, now); g.gain.exponentialRampToValueAtTime(0.001, now + spec[2]);
+    o.start(now); o.stop(now + spec[2] + 0.02);
+  }
+  function gongSound() {
+    if (!sound || !audio) return;
+    const now = audio.currentTime;
+    [110, 165, 220].forEach((fq, k) => {
+      const o = audio.createOscillator(), g = audio.createGain(); o.frequency.value = fq; o.type = "sine";
+      o.connect(g); g.connect(audio.destination);
+      g.gain.setValueAtTime(0.15 / (k + 1), now); g.gain.exponentialRampToValueAtTime(0.001, now + 2.2);
+      o.start(now); o.stop(now + 2.3);
+    });
+  }
+  $("btn-sound").addEventListener("click", () => {
+    sound = !sound;
+    if (sound && !audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch { audio = null; } }
+    audio?.resume?.();
+    $("btn-sound").textContent = sound ? "Audio: acceso" : "Audio: spento";
+    $("btn-sound").setAttribute("aria-pressed", String(sound));
+  });
+
+  // ---------- Loop ----------
+  let gongPlayedFor = null;
+  function frame(now) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (playback) {
+      const t = (Date.now() - playback.startAt) / 1000;
+      if (t >= 0 && gongPlayedFor !== playback.key + playback.startAt) { gongPlayedFor = playback.key + playback.startAt; gongSound(); }
+      drawFight(playback.sim, Math.max(0, t), now);
+      updateHud(playback.sim, t);
+      if (t >= FIGHT_S && !playback.shownResult) { playback.shownResult = true; showPodium(playback.sim, playback.mode === "demo"); refreshControls(); }
+    } else {
+      drawBackground(); drawIdle(now); updateHud(null, 0);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Podio ----------
+  function showPodium(sim, isDemo) {
+    const panel = $("podium-panel"), pod = $("podium");
+    if (!sim || sim.winner < 0) { panel.hidden = true; return; }
+    const w = sim.F[sim.winner];
+    const v = $("verdict"); v.textContent = "";
+    v.append(isDemo ? "Nell'incontro di prova vince " : "Oggi si mangia da ");
+    const b = document.createElement("b"); b.textContent = w.restaurant; v.append(b);
+    pod.textContent = "";
+    sim.podium.forEach((i, k) => {
+      const f = sim.F[i], d = document.createElement("div");
+      d.className = `step p${k + 1}`;
+      d.innerHTML = '<div class="em"></div><div class="dish"></div><div class="who"></div><div class="block"></div>';
+      d.children[0].textContent = f.emoji; d.children[1].textContent = f.dish;
+      d.children[2].textContent = `${f.restaurant} · ${f.name}`;
+      d.children[3].textContent = String(k + 1);
+      pod.append(d);
+    });
+    panel.hidden = false;
+  }
+
+  // ---------- Avvio incontro ----------
+  function rosterForFight(list) {
+    return list.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)).slice(0, MAX_FIGHTERS)
+      .map((e) => ({ id: e.id, name: e.name, restaurant: e.restaurant.trim(), dish: e.dish, emoji: e.emoji || guessEmoji(e.dish), move: e.move || "" }));
+  }
+  async function startFight() {
+    if (entries.length < 2) return;
+    const roster = rosterForFight(entries);
+    const seed = (Math.random() * 2 ** 32) >>> 0;
+    const sim = simulate(roster, seed);
+    const pod = sim.podium.map((i) => ({ dish: sim.F[i].dish, emoji: sim.F[i].emoji, restaurant: sim.F[i].restaurant, name: sim.F[i].name }));
+    const data = { date: todayKey, seed, startAt: Date.now() + 4000, roster, result: { restaurant: sim.F[sim.winner].restaurant, podium: pod }, n: roster.length };
+    $("btn-gong").disabled = true;
+    try { await backend.setDay(todayKey, data); }
+    catch (e) { $("gong-hint").textContent = "Il gong non è partito: " + (e?.message || "riprova tra un attimo."); $("btn-gong").disabled = false; }
+  }
+  function playDay(doc) {
+    const key = `${doc.date}:${doc.seed}`;
+    if (simCache.key !== key) simCache = { key, sim: simulate(doc.roster || [], doc.seed) };
+    if (playback && playback.mode === "live" && playback.key === key) return;
+    if (playback && playback.mode !== "live" && Date.now() - playback.startAt < FIGHT_S * 1000 && doc.startAt + FIGHT_S * 1000 < Date.now()) return;
+    playback = { sim: simCache.sim, startAt: doc.startAt, mode: "live", key };
+    resetRun();
+  }
+  function resetRun() { lastFeedCount = -1; lastSoundEvent = -1; confetti.length = 0; $("podium-panel").hidden = true; }
+
+  $("btn-gong").addEventListener("click", startFight);
+  $("btn-replay").addEventListener("click", () => {
+    if (!simCache.sim) return;
+    playback = { sim: simCache.sim, startAt: Date.now() + 3000, mode: "replay", key: simCache.key };
+    resetRun(); refreshControls();
+  });
+  $("btn-rematch").addEventListener("click", () => {
+    if (!confirmRematch) { confirmRematch = true; $("btn-rematch").textContent = "Confermi? Si rifà l'incontro per tutti"; setTimeout(() => { confirmRematch = false; $("btn-rematch").textContent = "Rivincita"; }, 4000); return; }
+    confirmRematch = false; $("btn-rematch").textContent = "Rivincita"; startFight();
+  });
+  $("btn-demo").addEventListener("click", () => {
+    const sim = simulate(SAMPLE, (Math.random() * 2 ** 32) >>> 0);
+    playback = { sim, startAt: Date.now() + 3000, mode: "demo", key: "demo" + Date.now() };
+    resetRun(); refreshControls();
+  });
+
+  function refreshControls() {
+    const live = dayDoc && dayDoc.startAt;
+    const running = playback && Date.now() - playback.startAt < FIGHT_S * 1000;
+    const done = live && Date.now() - dayDoc.startAt >= FIGHT_S * 1000;
+    const gong = $("btn-gong"), hint = $("gong-hint");
+    gong.hidden = !!live;
+    gong.disabled = entries.length < 2 || !backend;
+    $("btn-replay").hidden = !(done && !running);
+    $("btn-rematch").hidden = !(done && !running);
+    $("btn-demo").disabled = !!running;
+    const lateCount = live ? entries.filter((e) => !(dayDoc.roster || []).some((r) => r.id === e.id)).length : 0;
+    if (!backend) hint.textContent = "Collegamento all'arena in corso…";
+    else if (!live && entries.length < 2) hint.textContent = entries.length ? "Serve almeno un altro sfidante per suonare il gong." : "Iscrivi il tuo piatto qui a fianco, poi manda il link ai colleghi. In arena vedi un esempio.";
+    else if (!live) hint.textContent = `${entries.length} piatti pronti. Quando ci siete tutti, suonate il gong: l'incontro parte per tutti dopo 3 secondi.`;
+    else if (running) hint.textContent = "Incontro in corso: chi apre ora la pagina lo vede in diretta.";
+    else hint.textContent = lateCount ? `${lateCount} iscritti dopo il gong: con la Rivincita entrano anche loro.` : "Incontro concluso. La Rivincita rigioca con gli iscritti attuali.";
+  }
+  setInterval(refreshControls, 1000);
+
+  // ---------- Form ----------
+  const pick = $("emoji-pick");
+  EMOJIS.forEach((em) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = em; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Emoji " + em);
+    b.addEventListener("click", () => { chosenEmoji = em; emojiTouched = true; paintEmoji(); });
+    pick.append(b);
+  });
+  function paintEmoji() {
+    const em = chosenEmoji || guessEmoji($("f-dish").value);
+    [...pick.children].forEach((b) => b.setAttribute("aria-pressed", String(b.textContent === em)));
+  }
+  $("f-dish").addEventListener("input", () => { if (!emojiTouched) { chosenEmoji = null; paintEmoji(); } });
+
+  function myEntry() { return entries.find((e) => e.id === myId); }
+  function fillForm() {
+    const me = myEntry();
+    $("form-title").textContent = me ? "Il tuo lottatore" : "Sali sul ring";
+    $("btn-save").textContent = me ? "Aggiorna il piatto" : "Entra nella mischia";
+    $("btn-withdraw").hidden = !me;
+    if (me && !fillForm.done) {
+      $("f-name").value = me.name; $("f-rest").value = me.restaurant; $("f-dish").value = me.dish; $("f-move").value = me.move || "";
+      chosenEmoji = me.emoji; emojiTouched = true; paintEmoji(); fillForm.done = true;
+    }
+  }
+  $("entry-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    if (!backend) return;
+    const name = $("f-name").value.trim(), restaurant = $("f-rest").value.trim().replace(/\s+/g, " "), dish = $("f-dish").value.trim();
+    const msg = $("form-msg");
+    if (!name || !restaurant || !dish) { msg.className = "msg err"; msg.textContent = "Servono nome, ristorante e piatto."; return; }
+    // stesso ristorante scritto in modo diverso → usa la grafia già presente
+    const existing = entries.find((e) => restKey(e.restaurant) === restKey(restaurant));
+    const data = {
+      name, restaurant: existing ? existing.restaurant : restaurant, dish,
+      emoji: chosenEmoji || guessEmoji(dish), move: $("f-move").value.trim(),
+      createdAt: myEntry()?.createdAt || Date.now(), updatedAt: Date.now()
+    };
+    $("btn-save").disabled = true;
+    try {
+      await backend.saveEntry(todayKey, myId, data);
+      store.set("rumble-name", name); store.set("rumble-rest", data.restaurant);
+      msg.className = "msg"; msg.textContent = myEntry() ? "Piatto aggiornato." : "Sei nella mischia!";
+    } catch (e) {
+      msg.className = "msg err"; msg.textContent = "Salvataggio non riuscito: " + (e?.message || "riprova.");
+    } finally { $("btn-save").disabled = false; }
+  });
+  $("btn-withdraw").addEventListener("click", async () => {
+    try { await backend.deleteEntry(todayKey, myId); fillForm.done = false; $("form-msg").className = "msg"; $("form-msg").textContent = "Piatto ritirato."; }
+    catch (e) { $("form-msg").className = "msg err"; $("form-msg").textContent = "Non sono riuscito a ritirarlo: " + (e?.message || "riprova."); }
+  });
+
+  // ---------- Iscritti ----------
+  function renderTeams() {
+    const box = $("teams"); box.textContent = "";
+    $("roster-sub").textContent = entries.length ? `${entries.length} piatti · ${new Set(entries.map((e) => restKey(e.restaurant))).size} ristoranti` : "";
+    if (!entries.length) { box.innerHTML = '<div class="empty">Ancora nessuno sul ring. Il primo piatto dà il tono.</div>'; return; }
+    const colors = teamColors(entries), groups = {};
+    entries.forEach((e) => (groups[restKey(e.restaurant)] ||= []).push(e));
+    const rosterIds = new Set((dayDoc?.roster || []).map((r) => r.id));
+    Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length || a.localeCompare(b)).forEach((k) => {
+      const list = groups[k].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      const team = document.createElement("div"); team.className = "team";
+      const head = document.createElement("div"); head.className = "team-head";
+      const sw = document.createElement("span"); sw.className = "sw"; sw.style.background = colors[k];
+      const nm = document.createElement("span"); nm.textContent = list[0].restaurant;
+      const n = document.createElement("span"); n.className = "n"; n.textContent = list.length === 1 ? "1 lottatore" : `${list.length} lottatori`;
+      head.append(sw, nm, n); team.append(head);
+      list.forEach((e) => {
+        const row = document.createElement("div"); row.className = "fighter";
+        row.innerHTML = '<div class="em"></div><div><div class="dish"></div><div class="who"></div></div><div class="acts"></div>';
+        row.querySelector(".em").textContent = e.emoji || guessEmoji(e.dish);
+        row.querySelector(".dish").textContent = e.dish;
+        const who = row.querySelector(".who"); who.textContent = "proposto da " + e.name;
+        if (e.move) { who.append(" · mossa: "); const m = document.createElement("em"); m.textContent = e.move; who.append(m); }
+        if (dayDoc?.startAt && !rosterIds.has(e.id)) { const l = document.createElement("div"); l.className = "late"; l.textContent = "Arrivato dopo il gong"; who.after(l); }
+        if (e.id === myId) {
+          const ed = document.createElement("button"); ed.type = "button"; ed.className = "ghost small"; ed.textContent = "Modifica";
+          ed.addEventListener("click", () => { fillForm.done = false; fillForm(); $("f-dish").focus(); });
+          row.querySelector(".acts").append(ed);
+        }
+        team.append(row);
+      });
+      box.append(team);
+    });
+  }
+  function renderRestaurantList() {
+    const names = new Map();
+    [...entries, ...history.flatMap((h) => h.roster || [])].forEach((e) => { if (e.restaurant) names.set(restKey(e.restaurant), e.restaurant); });
+    const dl = $("rest-list"); dl.textContent = "";
+    [...names.values()].sort().forEach((n) => { const o = document.createElement("option"); o.value = n; dl.append(o); });
+  }
+
+  // ---------- Albo d'oro ----------
+  function renderFame() {
+    const done = history.filter((h) => h.result && h.startAt && Date.now() - h.startAt >= FIGHT_S * 1000)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    const ul = $("fame"), tally = $("tally");
+    if (!done.length) return;
+    ul.textContent = ""; tally.textContent = "";
+    done.slice(0, 10).forEach((h) => {
+      const w = h.result.podium[0] || {};
+      const li = document.createElement("li");
+      li.innerHTML = '<span class="d"></span><span class="e"></span><span class="r"><small></small></span>';
+      li.querySelector(".d").textContent = h.date === todayKey ? "oggi" : fmtShort(h.date);
+      li.querySelector(".e").textContent = w.emoji || "🏆";
+      li.querySelector(".r").prepend(h.result.restaurant);
+      li.querySelector("small").textContent = `${w.dish || ""} di ${w.name || "?"} · ${h.n || (h.roster || []).length} sfidanti`;
+      ul.append(li);
+    });
+    const counts = {};
+    done.forEach((h) => { const k = restKey(h.result.restaurant); counts[k] = counts[k] || { name: h.result.restaurant, n: 0 }; counts[k].n++; });
+    Object.values(counts).sort((a, b) => b.n - a.n).slice(0, 6).forEach((c) => {
+      const s = document.createElement("span"); s.className = "chip"; s.textContent = c.name;
+      const b = document.createElement("b"); b.textContent = c.n + (c.n === 1 ? " vittoria" : " vittorie"); s.append(b); tally.append(s);
+    });
+  }
+  setInterval(renderFame, 5000);
+
+  // ---------- Avvio ----------
+  $("today-label").textContent = fmtDate(todayKey);
+  $("f-name").value = store.get("rumble-name") || "";
+  $("f-rest").value = store.get("rumble-rest") || "";
+  paintEmoji();
+  resize();
+  requestAnimationFrame(frame);
+
+  function connect(be) {
+    backend = be;
+    const conn = $("conn");
+    conn.className = "conn " + be.mode;
+    $("conn-label").textContent = be.mode === "live" ? "Arena condivisa" : "Solo su questo browser";
+    be.onEntries(todayKey, (list) => { entries = list.filter((e) => e && e.dish); renderTeams(); fillForm(); renderRestaurantList(); refreshControls(); });
+    be.onDay(todayKey, (doc) => {
+      dayDoc = doc;
+      if (doc && doc.startAt && doc.seed != null) playDay(doc);
+      renderTeams(); refreshControls();
+    });
+    be.onHistory((list) => { history = list.filter(Boolean); renderFame(); renderRestaurantList(); });
+  }
+
+  (async () => {
+    let db = null, user = null;
+    try {
+      if (window.claude?.use) [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    } catch { db = null; }
+    if (user) {
+      try {
+        const me = await user.me();
+        if (me?.id) myId = safeSeg(me.id);
+        if (me?.name && !$("f-name").value) $("f-name").value = me.name.split(" ")[0];
+      } catch {}
+    }
+    connect(db ? dbBackend(db) : localBackend());
+  })();
+})();
+</script>
