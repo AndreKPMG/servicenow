@@ -365,3 +365,28 @@ L'SDK **non espone** alcuna API per server o tool MCP (`npx @servicenow/sdk expl
 e le guide skill). Un tool sul server `sn_itsm_aia.claude_reporting` sarebbe inoltre un record in una tabella di
 un **altro scope**, non consegnabile dall'install di questa app. Come concordato: nessuna insistenza, checklist
 dei 7 tool da creare a mano in MCP Server Console.
+
+### Install eseguito il 18/11/2026 (normale, flow inclusi)
+Autenticazione: modalità CI del CLI (`SN_SDK_NODE_ENV=SN_SDK_CI_INSTALL`, `SN_SDK_AUTH_TYPE=basic`,
+`SN_SDK_INSTANCE_URL`, `SN_SDK_USER`, `SN_SDK_USER_PWD`), che **bypassa il keyring**: utile perché il
+keyring locale non si sblocca più. Nessuna credenziale in file o in repo.
+
+Esito: `Flow activation complete: 2/2 succeeded`. Rollback: `af28a4c7c3a8d7d47bd96e35990131a6`.
+
+Verifica in sola lettura:
+- `sys_hub_flow`: 2 flow `active=true`, `status=published`, `latest_snapshot` = `master_snapshot`;
+- trigger: **uno per flow** (i duplicati dei vecchi install non ci sono più);
+- `published_version` sui trigger: **vuoto su entrambi** → serve un Publish manuale in Flow Designer;
+- condizioni If decodificate dal blob `values`: `correlation_idSTARTSWITHCHATDEMO_TEST` e `amount>10000`
+  (encoded query, corrette), `{{uuid.approval_state}}=approved` (data pill, corretta);
+- 4 route REST attive, 2 SLA attive, 3 skill in bozza (`state = 0`), 4 Script Include attivi.
+
+**Path reale delle API: `/api/x_kpm95_chatdemo/v1/chat/...`** — la versione sta *prima* del service id,
+non dopo. La checklist dei tool MCP è stata corretta di conseguenza.
+
+### runTests(): i test che scrivono usano solo record CHATDEMO_TEST
+Nuovo helper `_approvazioniTest(ambito)`: approvazioni in attesa dell'utente collegato sui soli record
+con `correlation_id` che inizia per `CHATDEMO_TEST`. I test 3, 4 e 5 lo usano, quindi **le 10 approvazioni
+della demo non vengono mai consumate**. Il test 3 preferisce il record sotto i 10.000 per non far scattare
+il secondo livello. I test 8 e 9 girano invece come l'utente di `demo_approver` (sola lettura), perché gli
+alert obbligatori sono coperti dalle 10 approvazioni della demo.

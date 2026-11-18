@@ -314,6 +314,8 @@ ChatDemoRunner.prototype = {
     // Girano in impersonation e chiamano ChatDemoApi, cioe' la stessa logica che
     // sta dietro le quattro API REST: quello che passa qui passa via REST.
     // Il test 10 (reset + seed) e' una sequenza manuale, non automatizzabile qui.
+    // I test che SCRIVONO (3, 4, 5) agiscono solo su record CHATDEMO_TEST: le 10
+    // approvazioni della demo non vengono mai consumate.
     // Nessun test si ferma senza esito: ogni errore finisce nella riga del test.
     runTests: function () {
         var out = { method: 'runTests', tests: [], warnings: [] }
@@ -383,12 +385,25 @@ ChatDemoRunner.prototype = {
             // 3 e 4 - approva, poi riprova la stessa approvazione: 409 NOT_PENDING
             come(approverId, '3 e 4', function () {
                 var api = new ChatDemoApi()
-                var elenco = api.approvalsMine('acquisti').approvazioni
+                // Solo record CHATDEMO_TEST: le 10 approvazioni della demo non si toccano.
+                var elenco = self._approvazioniTest('acquisti')
                 if (!elenco.length) {
                     out.tests.push({ test: '4 seconda decisione', esito: 'NON ESEGUITO: manca il test 3' })
-                    return { test: '3 approva dal tool', esito: 'VUOTO: nessuna approvazione acquisti in attesa' }
+                    return {
+                        test: '3 approva dal tool',
+                        esito: 'VUOTO: nessun acquisto CHATDEMO_TEST in attesa per chatdemo.approver',
+                    }
                 }
-                var id = elenco[0].approval_sys_id
+                // Preferisce il record sotto i 10.000: quello sopra fa scattare il
+                // secondo livello e sporcherebbe il conteggio delle approvazioni.
+                var scelto = elenco[0]
+                for (var j = 0; j < elenco.length; j++) {
+                    if (elenco[j].importo > 0 && elenco[j].importo <= 10000) {
+                        scelto = elenco[j]
+                        break
+                    }
+                }
+                var id = scelto.approval_sys_id
                 var primo = api.decide(id, 'approved', 'Approvato dal test automatico.')
                 var secondo = api.decide(id, 'approved', 'Secondo tentativo.')
                 out.tests.push({
@@ -399,7 +414,8 @@ ChatDemoRunner.prototype = {
                 })
                 return {
                     test: '3 approva dal tool',
-                    approvazione: elenco[0].numero,
+                    approvazione: scelto.numero,
+                    correlation_id: scelto.correlation_id,
                     http: primo.http,
                     stato: primo.stato_riletto || primo.codice,
                     esito: primo.http === 200 && primo.stato_riletto === 'approved' ? 'OK' : 'KO',
@@ -409,12 +425,20 @@ ChatDemoRunner.prototype = {
 
             // 5 - rifiuto senza commento
             come(approverId, '5', function () {
-                var api = new ChatDemoApi()
-                var elenco = api.approvalsMine().approvazioni
-                if (!elenco.length) return { test: '5 rifiuto senza commento', esito: 'VUOTO: nessuna approvazione in attesa' }
-                var r = api.decide(elenco[0].approval_sys_id, 'rejected', '')
+                // Anche qui solo record CHATDEMO_TEST. Il 400 non cambia stato,
+                // quindi non consuma nulla, ma il bersaglio resta un record di test.
+                var elenco = self._approvazioniTest()
+                if (!elenco.length) {
+                    return {
+                        test: '5 rifiuto senza commento',
+                        esito: 'VUOTO: nessun record CHATDEMO_TEST in attesa per chatdemo.approver',
+                    }
+                }
+                var r = new ChatDemoApi().decide(elenco[0].approval_sys_id, 'rejected', '')
                 return {
                     test: '5 rifiuto senza commento',
+                    approvazione: elenco[0].numero,
+                    correlation_id: elenco[0].correlation_id,
                     http: r.http,
                     codice: r.codice,
                     esito: r.http === 400 && r.codice === 'COMMENT_REQUIRED' ? 'OK' : 'KO',
@@ -456,7 +480,9 @@ ChatDemoRunner.prototype = {
             })
 
             // 8 e 9 - alert attesi presenti, campi fuori perimetro assenti
-            come(approverId, '8 e 9', function () {
+            // 8 e 9 girano come chi conduce la demo: le dieci approvazioni che
+            // coprono tutti gli alert sono sue. Sono letture, non consumano nulla.
+            come(this._demoApproverId(out) || approverId, '8 e 9', function () {
                 var api = new ChatDemoApi()
                 var elenco = api.approvalsMine().approvazioni
                 if (!elenco.length) {
@@ -534,7 +560,7 @@ ChatDemoRunner.prototype = {
             })
 
             out.nota =
-                'I test 3 e 5 consumano due approvazioni in attesa: dopo runTests() ne restano 8 e il test 8 puo segnalare alert mancanti. Prima della demo: reset(true) e poi seed() (test 10).'
+                'I test che scrivono agiscono solo su record CHATDEMO_TEST: le 10 approvazioni della demo restano intatte. Il test 3 consuma una approvazione di test, il 5 non consuma nulla.'
             return this._ok(out)
         } catch (e) {
             return this._err(out, e)
@@ -902,6 +928,42 @@ ChatDemoRunner.prototype = {
             out.warnings.push('delega: ' + e)
             return 'errore'
         }
+    },
+
+    // Approvazioni in attesa dell'utente collegato sui SOLI record con tag
+    // CHATDEMO_TEST. I test che scrivono usano queste: le 10 approvazioni della
+    // demo non vanno mai consumate.
+    // Utente che conduce la demo: proprieta' x_kpm95_chatdemo.demo_approver.
+    _demoApproverId: function (out) {
+        var v = gs.getProperty('x_kpm95_chatdemo.demo_approver', '')
+        if (!v) out.warnings.push('proprieta demo_approver vuota')
+        return v
+    },
+
+    _approvazioniTest: function (ambito) {
+        var tabelle = ambito === 'acquisti' ? [this.T_ACQ] : ambito === 'hcx' ? [this.T_HCX] : [this.T_ACQ, this.T_HCX]
+        var res = []
+        var gr = new GlideRecord('sysapproval_approver')
+        gr.addQuery('approver', gs.getUserID())
+        gr.addQuery('state', 'requested')
+        gr.addQuery('source_table', 'IN', tabelle.join(','))
+        gr.orderBy('sys_created_on')
+        gr.setLimit(50)
+        gr.query()
+        while (gr.next()) {
+            var tabella = gr.getValue('source_table')
+            var rec = new GlideRecord(tabella)
+            if (!rec.get(gr.getValue('sysapproval'))) continue
+            if ((rec.getValue('correlation_id') || '').indexOf(this.TAG_TEST) !== 0) continue
+            res.push({
+                approval_sys_id: gr.getUniqueValue(),
+                tabella: tabella,
+                numero: rec.getValue('number'),
+                correlation_id: rec.getValue('correlation_id'),
+                importo: parseFloat((tabella === this.T_ACQ ? rec.getValue('amount') : rec.getValue('proposed_fee')) || '0'),
+            })
+        }
+        return res
     },
 
     _myApprovals: function (soloDemo) {
