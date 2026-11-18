@@ -64,42 +64,122 @@ declare global {
                     act_acq_ask: {
                         table: 'sys_hub_action_instance_v2'
                         id: 'eb2c828a7311429ca1bb50893ba4e312'
+                        deleted: true
+                    }
+                    act_acq_ask_demo: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'b3e6c0a8284548b884f46454a58b083f'
                     }
                     act_acq_ask_l2: {
                         table: 'sys_hub_action_instance_v2'
                         id: '9263efb49c1d4efb898372713160b21b'
                     }
+                    act_acq_ask_test: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '85c4132073c64d0cb417aa89bdac2856'
+                    }
+                    act_acq_demo_approved: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'c308ad9926634d5bacf829de26601259'
+                    }
+                    act_acq_demo_rejected: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '3bc1854e197b4906b2c7f26ca5adc66c'
+                    }
                     act_acq_lookup_approver: {
                         table: 'sys_hub_action_instance_v2'
                         id: 'cc16c44be0344d33a2d0092e0bf534a3'
+                        deleted: true
+                    }
+                    act_acq_lookup_prop: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '1a253dd8b3834dff8ea089a37f2c84f6'
+                    }
+                    act_acq_lookup_testuser: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '488d359be40b44cf81e7e630ea78d733'
                     }
                     act_acq_set_approved: {
                         table: 'sys_hub_action_instance_v2'
                         id: '6aec07a8309c4c848926d17cd110b2ba'
+                        deleted: true
                     }
                     act_acq_set_rejected: {
                         table: 'sys_hub_action_instance_v2'
                         id: 'fb66601eb96244e8a709f95d5b3228ff'
+                        deleted: true
+                    }
+                    act_acq_test_approved: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '4cba9f19f39e4974be628ea1654f2251'
+                    }
+                    act_acq_test_rejected: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '1c133cbdc6264510b53627b867de70b6'
                     }
                     act_hcx_ask: {
                         table: 'sys_hub_action_instance_v2'
                         id: 'f6380826cccb4573a449b28be1a04d2b'
+                        deleted: true
+                    }
+                    act_hcx_ask_demo: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '18f7014faaed4d4f9adc2c47abd1dae5'
+                    }
+                    act_hcx_ask_test: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '346aa25e0cf64277ba1c3d530d855efb'
+                    }
+                    act_hcx_demo_approved: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'fbb3efcf78cc456e87be538cd48676d9'
+                    }
+                    act_hcx_demo_rejected: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '79798a5758c04e258f48e7d82780dc14'
                     }
                     act_hcx_lookup_approver: {
                         table: 'sys_hub_action_instance_v2'
                         id: 'ef7ed34a76d34792aaa80e37a23cc1ef'
+                        deleted: true
+                    }
+                    act_hcx_lookup_prop: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '97eee64836794f818c4129e2720c13ad'
+                    }
+                    act_hcx_lookup_testuser: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '3888d0b89f6347fbbc300aeee7489fd4'
                     }
                     act_hcx_set_approved: {
                         table: 'sys_hub_action_instance_v2'
                         id: 'c7edb22336fd4cb4a6fa4aeed3eb8b82'
+                        deleted: true
                     }
                     act_hcx_set_rejected: {
                         table: 'sys_hub_action_instance_v2'
                         id: '85c55b1fe7304cb8a4619ee8fb4e5ea9'
+                        deleted: true
+                    }
+                    act_hcx_test_approved: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '22ff396c65b94b77b014f49270409eca'
+                    }
+                    act_hcx_test_rejected: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '49c2d561ce484fe7aae5db93d1f85814'
                     }
                     bom_json: {
                         table: 'sys_module'
                         id: '30879ef3d4454e9fa7a6166fe6023022'
+                    }
+                    else_acq_is_demo: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'b9ea149eba2f4cedbd03c840ca3805b9'
+                    }
+                    else_hcx_is_demo: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'bec1fa000ea34e3f939a917d7b915660'
                     }
                     flow_acq_approval: {
                         table: 'sys_hub_flow'
@@ -128,22 +208,66 @@ declare global {
                     if_acq_approved: {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '837c3cdc8fdc4c5b9e44d98b75aa44c2'
+                        deleted: true
+                    }
+                    if_acq_demo_approved: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '89b21270934242e0af9689c1ca793065'
+                    }
+                    if_acq_demo_rejected: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '0ef4edac52bd41579837790f98d16a26'
                     }
                     if_acq_high_value: {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '1a1f8b8336ca4b139e90ca1e32de4e88'
                     }
+                    if_acq_is_test: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '45647623fac942e2a7a317705835d436'
+                    }
                     if_acq_rejected: {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: 'd2a1edb3401b4eb0a45c103c616f4a89'
+                        deleted: true
+                    }
+                    if_acq_test_approved: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'dfd21d89dd884d81ac013a2849c203f5'
+                    }
+                    if_acq_test_rejected: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '8c06542c6e8a481683c0aa6daeb204e4'
                     }
                     if_hcx_approved: {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: 'a5c8462e3f0b4449bbe1f78e9827b587'
+                        deleted: true
+                    }
+                    if_hcx_demo_approved: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'cc0230e0efea4c6da915f3196e44611a'
+                    }
+                    if_hcx_demo_rejected: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'ef714263570b4dfcb6770a75285007c7'
+                    }
+                    if_hcx_is_test: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '90b92cef87d143b3947411f5b027e046'
                     }
                     if_hcx_rejected: {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '098865578f864bbeaa0a1bbb121a5396'
+                        deleted: true
+                    }
+                    if_hcx_test_approved: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '3c54f32cdbac49dd844f5ca718cdd04d'
+                    }
+                    if_hcx_test_rejected: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '65b4c68a61c14f53a291fc4898a3bac9'
                     }
                     job_chatdemo_setup: {
                         table: 'sysauto_script'
@@ -185,6 +309,10 @@ declare global {
                     role_requester_chatuser: {
                         table: 'sys_user_has_role'
                         id: 'abfd34d4aeb4400e95a308625f9b02a2'
+                    }
+                    si_chatdemo_runner: {
+                        table: 'sys_script_include'
+                        id: 'b5029da32b0440fb9e40f6ea2e46d7e2'
                     }
                     si_chatdemo_setup: {
                         table: 'sys_script_include'
