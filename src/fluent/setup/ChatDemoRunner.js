@@ -5,6 +5,7 @@ ChatDemoRunner.prototype = {
     T_HCX: 'x_kpm95_chatdemo_hcp_engage',
     TAG: 'CHATDEMO',
     TAG_TEST: 'CHATDEMO_TEST',
+    ROLE_USER: 'x_kpm95_chatdemo.user',
 
     initialize: function () {},
 
@@ -163,97 +164,159 @@ ChatDemoRunner.prototype = {
 
     // ------------------------------------------------------------------ seed
 
+    // Prepara i dati della demo. Tre blocchi separati e non sovrapposti:
+    //   1. 10 approvazioni IN ATTESA per chi conduce la demo (proprieta'
+    //      demo_approver). Inserite normalmente: il flow deve partire.
+    //   2. record di TEST con tag CHATDEMO_TEST, instradati a chatdemo.approver
+    //      e quindi visibili a chatdemo.delegate tramite delega. Fuori dai 10.
+    //   3. storico chiuso, scritto con setWorkflow(false): nessun flow, nessuna
+    //      approvazione, serve solo ai KPI.
     seed: function () {
-        var out = { method: 'seed', acquisti: 0, hcx: 0, incidents: 0, chiusi: [], warnings: [] }
+        var out = {
+            method: 'seed',
+            attesa: { acquisti: 0, hcx: 0 },
+            test: { acquisti: 0, hcx: 0 },
+            storico: { acquisti: 0, hcx: 0 },
+            incident: {},
+            warnings: [],
+        }
         try {
             var caller = this._userId('chatdemo.requester', out)
             var groups = this._groupIds(out)
+            var i, res
 
-            var acq = [
+            // ---------------------------------------- 1) cinque acquisti in attesa
+            var acqAttesa = [
                 { s: 'Rinnovo licenze CRM', supplier: 'Nordwind Software', category: 'software', amount: 6400, budget_residual: 15000, quote_attached: true, caso: 'regolare' },
                 { s: 'Server di collaudo', supplier: 'Baltic Hardware', category: 'hardware', amount: 9200, budget_residual: 4000, quote_attached: true, caso: 'BUDGET_EXCEEDED' },
                 { s: 'Consulenza migrazione', supplier: 'Delta Consulting', category: 'consulting', amount: 7800, budget_residual: 20000, quote_attached: false, caso: 'QUOTE_MISSING' },
                 { s: 'Rinnovo parco notebook', supplier: 'Baltic Hardware', category: 'hardware', amount: 24000, budget_residual: 60000, quote_attached: true, caso: 'HIGH_VALUE' },
                 { s: 'Campagna employer branding', supplier: 'Mediana Comm', category: 'marketing', amount: 5200, budget_residual: 12000, quote_attached: true, caso: 'regolare' },
-                { s: 'Manutenzione impianti', supplier: 'Facility Pro', category: 'facilities', amount: 3100, budget_residual: 9000, quote_attached: true, caso: 'storico' },
-                { s: 'Licenze BI', supplier: 'Nordwind Software', category: 'software', amount: 4300, budget_residual: 11000, quote_attached: true, caso: 'storico' },
-                { s: 'Arredi sala riunioni', supplier: 'Facility Pro', category: 'facilities', amount: 2600, budget_residual: 8000, quote_attached: true, caso: 'storico' },
             ]
-
-            var i, res
-            for (i = 0; i < acq.length; i++) {
-                res = this._createAcq(
-                    {
-                        short_description: 'CHATDEMO - ' + acq[i].s,
-                        supplier: acq[i].supplier,
-                        category: acq[i].category,
-                        amount: acq[i].amount,
-                        budget_residual: acq[i].budget_residual,
-                        cost_center: 'CC-DEMO-0' + ((i % 3) + 1),
-                        justification: 'Richiesta demo, dati inventati. Caso: ' + acq[i].caso,
-                        quote_attached: acq[i].quote_attached,
-                    },
-                    this.TAG,
-                    caller,
-                    out
-                )
-                if (res && res.sys_id) {
-                    out.acquisti++
-                    if (acq[i].caso === 'storico') out.chiusi.push({ table: this.T_ACQ, sys_id: res.sys_id })
-                }
+            for (i = 0; i < acqAttesa.length; i++) {
+                res = this._createAcq(this._acqVals(acqAttesa[i], i), this.TAG, caller, out, false)
+                if (res) out.attesa.acquisti++
             }
 
-            var hcx = [
+            // ------------------------------------------- 2) cinque HCx in attesa
+            var hcxAttesa = [
                 { s: 'Advisory board cardiologia', hcp: 'Dott.ssa Anna Esempio', sp: 'cardiology', ev: 'advisory_board', fee: 1800, fmv: 2500, cv: true, ct: true, caso: 'regolare' },
                 { s: 'Speaker congresso oncologia', hcp: 'Dott. Luca Prova', sp: 'oncology', ev: 'speaker', fee: 4200, fmv: 3000, cv: true, ct: true, caso: 'FEE_OVER_FMV' },
                 { s: 'Consulenza protocollo', hcp: 'Dott. Marco Finto', sp: 'neurology', ev: 'consultancy', fee: 2200, fmv: 3000, cv: false, ct: true, caso: 'CV_MISSING' },
                 { s: 'Partecipazione congresso', hcp: 'Dott.ssa Elisa Test', sp: 'endocrinology', ev: 'congress', fee: 1200, fmv: 2000, cv: true, ct: false, caso: 'CONTRACT_MISSING' },
                 { s: 'Advisory board medicina generale', hcp: 'Dott. Paolo Esempio', sp: 'general', ev: 'advisory_board', fee: 1500, fmv: 2200, cv: true, ct: true, caso: 'regolare' },
-                { s: 'Speaker webinar', hcp: 'Dott.ssa Sara Prova', sp: 'cardiology', ev: 'speaker', fee: 900, fmv: 1500, cv: true, ct: true, caso: 'storico' },
-                { s: 'Consulenza linee guida', hcp: 'Dott. Ivan Finto', sp: 'oncology', ev: 'consultancy', fee: 2600, fmv: 3500, cv: true, ct: true, caso: 'storico' },
-                { s: 'Advisory board neurologia', hcp: 'Dott.ssa Nora Test', sp: 'neurology', ev: 'advisory_board', fee: 1900, fmv: 2400, cv: true, ct: true, caso: 'storico' },
             ]
-
-            for (i = 0; i < hcx.length; i++) {
-                res = this._createHcx(
-                    {
-                        short_description: 'CHATDEMO - ' + hcx[i].s,
-                        hcp_name: hcx[i].hcp,
-                        specialty: hcx[i].sp,
-                        event_type: hcx[i].ev,
-                        proposed_fee: hcx[i].fee,
-                        fmv_max: hcx[i].fmv,
-                        cv_received: hcx[i].cv,
-                        contract_signed: hcx[i].ct,
-                        compliance_check: 'not_started',
-                    },
-                    this.TAG,
-                    caller,
-                    out
-                )
-                if (res && res.sys_id) {
-                    out.hcx++
-                    if (hcx[i].caso === 'storico') out.chiusi.push({ table: this.T_HCX, sys_id: res.sys_id })
-                }
+            for (i = 0; i < hcxAttesa.length; i++) {
+                res = this._createHcx(this._hcxVals(hcxAttesa[i]), this.TAG, caller, out, false)
+                if (res) out.attesa.hcx++
             }
 
-            out.incidents = this._seedIncidents(groups, caller, out)
+            // --------------------- 3) record di test, instradati a chatdemo.approver
+            var acqTest = [
+                { s: 'TEST permessi acquisto', supplier: 'Nordwind Software', category: 'software', amount: 3300, budget_residual: 9000, quote_attached: true, caso: 'test regolare' },
+                { s: 'TEST secondo livello', supplier: 'Delta Consulting', category: 'consulting', amount: 18500, budget_residual: 40000, quote_attached: true, caso: 'test oltre 10.000' },
+            ]
+            for (i = 0; i < acqTest.length; i++) {
+                res = this._createAcq(this._acqVals(acqTest[i], i), this.TAG_TEST, caller, out, false)
+                if (res) out.test.acquisti++
+            }
 
-            // Delega per il test 2: chatdemo.delegate delega chatdemo.approver.
+            var hcxTest = [
+                { s: 'TEST permessi engagement', hcp: 'Dott. Test Uno', sp: 'cardiology', ev: 'advisory_board', fee: 1400, fmv: 2000, cv: true, ct: true, caso: 'test regolare' },
+                { s: 'TEST compenso sopra FMV', hcp: 'Dott.ssa Test Due', sp: 'oncology', ev: 'speaker', fee: 3900, fmv: 2600, cv: true, ct: false, caso: 'test con alert' },
+            ]
+            for (i = 0; i < hcxTest.length; i++) {
+                res = this._createHcx(this._hcxVals(hcxTest[i]), this.TAG_TEST, caller, out, false)
+                if (res) out.test.hcx++
+            }
+
+            // ------------------------------- 4) storico chiuso, senza flow ne approvazioni
+            var acqStorico = [
+                { s: 'Manutenzione impianti', supplier: 'Facility Pro', category: 'facilities', amount: 3100, budget_residual: 9000, quote_attached: true, caso: 'storico', mesiFa: 3 },
+                { s: 'Licenze BI', supplier: 'Nordwind Software', category: 'software', amount: 4300, budget_residual: 11000, quote_attached: true, caso: 'storico', mesiFa: 2 },
+                { s: 'Arredi sala riunioni', supplier: 'Facility Pro', category: 'facilities', amount: 2600, budget_residual: 8000, quote_attached: true, caso: 'storico', mesiFa: 1 },
+            ]
+            for (i = 0; i < acqStorico.length; i++) {
+                var va = this._acqVals(acqStorico[i], i)
+                va.state = 3
+                va.opened_at = this._mesiFa(acqStorico[i].mesiFa)
+                res = this._createAcq(va, this.TAG, caller, out, true)
+                if (res) out.storico.acquisti++
+            }
+
+            var hcxStorico = [
+                { s: 'Speaker webinar', hcp: 'Dott.ssa Sara Prova', sp: 'cardiology', ev: 'speaker', fee: 900, fmv: 1500, cv: true, ct: true, caso: 'storico', mesiFa: 3 },
+                { s: 'Consulenza linee guida', hcp: 'Dott. Ivan Finto', sp: 'oncology', ev: 'consultancy', fee: 2600, fmv: 3500, cv: true, ct: true, caso: 'storico', mesiFa: 2 },
+                { s: 'Advisory board neurologia', hcp: 'Dott.ssa Nora Test', sp: 'neurology', ev: 'advisory_board', fee: 1900, fmv: 2400, cv: true, ct: true, caso: 'storico', mesiFa: 1 },
+            ]
+            for (i = 0; i < hcxStorico.length; i++) {
+                var vh = this._hcxVals(hcxStorico[i])
+                vh.state = 3
+                vh.compliance_check = 'passed'
+                vh.opened_at = this._mesiFa(hcxStorico[i].mesiFa)
+                res = this._createHcx(vh, this.TAG, caller, out, true)
+                if (res) out.storico.hcx++
+            }
+
+            // ------------------------------------------------------- 5) incident
+            out.incident = this._seedIncidents(groups, caller, out)
+
+            // Delega per il test 2: chatdemo.approver delega chatdemo.delegate.
             out.delega = this._ensureDelegate(out)
 
             out.nota =
-                'Le approvazioni nascono dai flow in background. I record marcati storico restano in attesa finche i flow non completano: rilanciare seed() non li duplica solo se la tabella e stata ripulita con reset(true).'
+                'Le 10 approvazioni in attesa nascono dai flow in background: attendere qualche secondo e rilanciare pilotReport(). Lo storico e scritto con setWorkflow(false), quindi non genera approvazioni. Rilanciare seed() duplica i dati: prima reset(true).'
             return this._ok(out)
         } catch (e) {
             return this._err(out, e)
         }
     },
 
+    _acqVals: function (r, i) {
+        return {
+            short_description: 'CHATDEMO - ' + r.s,
+            supplier: r.supplier,
+            category: r.category,
+            amount: r.amount,
+            budget_residual: r.budget_residual,
+            cost_center: 'CC-DEMO-0' + ((i % 3) + 1),
+            justification: 'Dati inventati per la demo. Caso: ' + r.caso,
+            quote_attached: r.quote_attached,
+        }
+    },
+
+    _hcxVals: function (r) {
+        var d = new GlideDateTime()
+        d.addDaysLocalTime(30)
+        return {
+            short_description: 'CHATDEMO - ' + r.s,
+            hcp_name: r.hcp,
+            specialty: r.sp,
+            event_type: r.ev,
+            event_date: d.getValue().substring(0, 10),
+            proposed_fee: r.fee,
+            fmv_max: r.fmv,
+            cv_received: r.cv,
+            contract_signed: r.ct,
+            compliance_check: 'not_started',
+        }
+    },
+
+    _mesiFa: function (n) {
+        var d = new GlideDateTime()
+        d.addMonthsLocalTime(-n)
+        return d.getValue()
+    },
+
     // ------------------------------------------------------------------ test
 
+    // I test 1-9 della tabella di Fase 6, piu' il test negativo sul requester.
+    // Girano in impersonation e chiamano ChatDemoApi, cioe' la stessa logica che
+    // sta dietro le quattro API REST: quello che passa qui passa via REST.
+    // Il test 10 (reset + seed) e' una sequenza manuale, non automatizzabile qui.
+    // Nessun test si ferma senza esito: ogni errore finisce nella riga del test.
     runTests: function () {
-        var out = { method: 'runTests', tests: [] }
+        var out = { method: 'runTests', tests: [], warnings: [] }
         try {
             var approverId = this._userId('chatdemo.approver', out)
             var delegateId = this._userId('chatdemo.delegate', out)
@@ -261,71 +324,217 @@ ChatDemoRunner.prototype = {
 
             var imp = this._impersonator(out)
             if (!imp) {
-                out.tests.push({ test: 'impersonation', esito: 'NON DISPONIBILE', nota: 'GlideImpersonate non accessibile da questo scope: eseguire runTests() da uno script in scope global.' })
+                out.tests.push({
+                    test: 'impersonation',
+                    esito: 'NON DISPONIBILE',
+                    nota: 'GlideImpersonate non accessibile: eseguire runTests() da Scripts - Background in scope global.',
+                })
                 return this._ok(out)
             }
-
             var original = gs.getUserID()
+            var self = this
+            var stato = {}
 
-            // T1 - l'elenco filtrato contiene solo le due tabelle demo
-            try {
-                imp.impersonate(approverId)
-                var mine = this._myApprovals(true)
-                var all = this._myApprovals(false)
-                out.tests.push({
-                    test: 'T1 approvals/mine solo tabelle demo',
-                    filtrate: mine.length,
-                    totali_utente: all.length,
-                    esito: this._every(mine, this.T_ACQ, this.T_HCX) ? 'OK' : 'KO',
-                })
-            } catch (e1) {
-                out.tests.push({ test: 'T1', esito: 'ERRORE', errore: '' + e1 })
-            } finally {
-                imp.impersonate(original)
+            var come = function (userId, nome, fn) {
+                try {
+                    imp.impersonate(userId)
+                    var r = fn()
+                    if (r) out.tests.push(r)
+                } catch (e) {
+                    out.tests.push({ test: nome, esito: 'ERRORE', errore: '' + e })
+                } finally {
+                    try {
+                        imp.impersonate(original)
+                    } catch (e2) {
+                        out.warnings.push('ripristino utente: ' + e2)
+                    }
+                }
             }
 
-            // T6 / negativo - il requester non legge record altrui ne aggiorna approvazioni non sue
-            try {
-                imp.impersonate(requesterId)
-                var visibili = this._countSecure(this.T_ACQ)
-                var altrui = this._firstApprovalNotOf(requesterId)
-                var updateVietato = 'non testato'
+            // 1 - l'approvatore vede le proprie approvazioni, solo sulle due tabelle demo
+            come(approverId, '1', function () {
+                var r = new ChatDemoApi().approvalsMine()
+                var soloDemo = true
+                for (var i = 0; i < r.approvazioni.length; i++) {
+                    var a = r.approvazioni[i].ambito
+                    if (a !== 'acquisti' && a !== 'hcx') soloDemo = false
+                }
+                stato.elenco = r.approvazioni
+                return {
+                    test: '1 approvals/mine solo tabelle demo',
+                    trovate: r.totale,
+                    esito: r.totale > 0 && soloDemo ? 'OK' : r.totale === 0 ? 'VUOTO: lanciare prima seed()' : 'KO',
+                }
+            })
+
+            // 2 - il delegato vede le approvazioni di chi lo ha delegato
+            come(delegateId, '2', function () {
+                var r = new ChatDemoApi().approvalsMine()
+                var perDelega = 0
+                for (var i = 0; i < r.approvazioni.length; i++) if (r.approvazioni[i].delegata) perDelega++
+                return {
+                    test: '2 approvazione delegata',
+                    trovate: r.totale,
+                    per_delega: perDelega,
+                    esito: perDelega > 0 ? 'OK' : 'KO: nessuna approvazione per delega',
+                }
+            })
+
+            // 3 e 4 - approva, poi riprova la stessa approvazione: 409 NOT_PENDING
+            come(approverId, '3 e 4', function () {
+                var api = new ChatDemoApi()
+                var elenco = api.approvalsMine('acquisti').approvazioni
+                if (!elenco.length) {
+                    out.tests.push({ test: '4 seconda decisione', esito: 'NON ESEGUITO: manca il test 3' })
+                    return { test: '3 approva dal tool', esito: 'VUOTO: nessuna approvazione acquisti in attesa' }
+                }
+                var id = elenco[0].approval_sys_id
+                var primo = api.decide(id, 'approved', 'Approvato dal test automatico.')
+                var secondo = api.decide(id, 'approved', 'Secondo tentativo.')
+                out.tests.push({
+                    test: '4 seconda decisione sulla stessa approvazione',
+                    http: secondo.http,
+                    codice: secondo.codice,
+                    esito: secondo.http === 409 && secondo.codice === 'NOT_PENDING' ? 'OK' : 'KO',
+                })
+                return {
+                    test: '3 approva dal tool',
+                    approvazione: elenco[0].numero,
+                    http: primo.http,
+                    stato: primo.stato_riletto || primo.codice,
+                    esito: primo.http === 200 && primo.stato_riletto === 'approved' ? 'OK' : 'KO',
+                    nota: 'Il record sorgente lo aggiorna il flow in background: confermare con pilotReport().',
+                }
+            })
+
+            // 5 - rifiuto senza commento
+            come(approverId, '5', function () {
+                var api = new ChatDemoApi()
+                var elenco = api.approvalsMine().approvazioni
+                if (!elenco.length) return { test: '5 rifiuto senza commento', esito: 'VUOTO: nessuna approvazione in attesa' }
+                var r = api.decide(elenco[0].approval_sys_id, 'rejected', '')
+                return {
+                    test: '5 rifiuto senza commento',
+                    http: r.http,
+                    codice: r.codice,
+                    esito: r.http === 400 && r.codice === 'COMMENT_REQUIRED' ? 'OK' : 'KO',
+                }
+            })
+
+            // 6 - chi non e' approvatore non decide
+            come(requesterId, '6', function () {
+                var altrui = self._firstApprovalNotOf(requesterId)
+                if (!altrui) return { test: '6 utente non approvatore', esito: 'VUOTO: nessuna approvazione di altri' }
+                var r = new ChatDemoApi().decide(altrui, 'approved', 'Tentativo non autorizzato.')
+                return {
+                    test: '6 utente non approvatore',
+                    http: r.http,
+                    codice: r.codice,
+                    esito: r.codice === 'NOT_APPROVER' || r.codice === 'NOT_FOUND' ? 'OK' : 'KO',
+                }
+            })
+
+            // 7 - KPI confrontati con il conteggio diretto, e solo aggregati
+            come(approverId, '7', function () {
+                var api = new ChatDemoApi()
+                var t = api.ticketsTrend(6, 'priority')
+                var sla = api.slaPerformance(6)
+                var attesi = self._count('incident', 'correlation_idSTARTSWITH' + self.TAG + '^active=true')
+                var soloAggregati = true
+                for (var i = 0; i < t.per_mese.length; i++) {
+                    if (t.per_mese[i].sys_id || t.per_mese[i].numero) soloAggregati = false
+                }
+                return {
+                    test: '7 KPI contro conteggio diretto',
+                    backlog_api: t.backlog.totale,
+                    backlog_atteso: attesi,
+                    mesi_trend: t.per_mese.length,
+                    mesi_sla: sla.per_mese.length,
+                    definizioni_sla: sla.definizioni_considerate,
+                    esito: t.backlog.totale === attesi && soloAggregati ? 'OK' : 'KO',
+                }
+            })
+
+            // 8 e 9 - alert attesi presenti, campi fuori perimetro assenti
+            come(approverId, '8 e 9', function () {
+                var api = new ChatDemoApi()
+                var elenco = api.approvalsMine().approvazioni
+                if (!elenco.length) {
+                    out.tests.push({ test: '9 campi fuori perimetro', esito: 'VUOTO' })
+                    return { test: '8 alert obbligatori', esito: 'VUOTO: nessuna approvazione in attesa' }
+                }
+                var ammessiAcq = {
+                    ambito: 1, numero: 1, titolo: 1, richiedente: 1, fornitore: 1, categoria: 1, importo: 1,
+                    budget_residuo: 1, centro_di_costo: 1, motivazione: 1, preventivo_allegato: 1,
+                    alert: 1, dati_mancanti: 1,
+                }
+                var ammessiHcx = {
+                    ambito: 1, numero: 1, titolo: 1, richiedente: 1, hcp: 1, specializzazione: 1, tipo_evento: 1,
+                    data_evento: 1, compenso_proposto: 1, fair_market_value: 1, cv_ricevuto: 1,
+                    contratto_firmato: 1, verifica_compliance: 1, alert: 1, dati_mancanti: 1,
+                }
+                var alertVisti = {}
+                var extra = []
+                for (var i = 0; i < elenco.length; i++) {
+                    var ctx = api.skillContext(elenco[i].approval_sys_id)
+                    if (ctx.errore) {
+                        out.warnings.push('skillContext ' + elenco[i].numero + ': ' + ctx.errore)
+                        continue
+                    }
+                    var ammessi = ctx.ambito === 'acquisti' ? ammessiAcq : ammessiHcx
+                    for (var k in ctx) if (!ammessi[k]) extra.push(ctx.ambito + '.' + k)
+                    for (var a = 0; a < ctx.alert.length; a++) alertVisti[ctx.alert[a]] = 1
+                }
+                var attesi = ['BUDGET_EXCEEDED', 'QUOTE_MISSING', 'HIGH_VALUE', 'FEE_OVER_FMV', 'CV_MISSING', 'CONTRACT_MISSING']
+                var mancanti = []
+                for (var x = 0; x < attesi.length; x++) if (!alertVisti[attesi[x]]) mancanti.push(attesi[x])
+                out.tests.push({
+                    test: '9 campi fuori perimetro nella skill',
+                    campi_non_ammessi: extra,
+                    esito: extra.length === 0 ? 'OK' : 'KO',
+                })
+                return {
+                    test: '8 alert obbligatori',
+                    alert_trovati: Object.keys ? Object.keys(alertVisti) : alertVisti,
+                    alert_mancanti: mancanti,
+                    esito: mancanti.length === 0 ? 'OK' : 'KO: casi non coperti o gia consumati dai test 3 e 5',
+                }
+            })
+
+            // Ruolo KPI: il requester non ce l'ha, quindi le route rispondono 403
+            come(requesterId, 'ruolo KPI', function () {
+                var haRuolo = gs.hasRole(self.ROLE_USER)
+                return {
+                    test: 'ruolo KPI assente sul requester',
+                    ruolo_presente: haRuolo,
+                    esito: haRuolo ? 'KO: il requester ha il ruolo KPI' : 'OK: le route KPI rispondono 403 ROLE_REQUIRED',
+                }
+            })
+
+            // Negativo - il requester non legge i record altrui ne aggiorna approvazioni non sue
+            come(requesterId, 'negativo requester', function () {
+                var visibili = self._countSecure(self.T_ACQ)
+                var vietato = 'non testato'
+                var altrui = self._firstApprovalNotOf(requesterId)
                 if (altrui) {
                     var ga = new GlideRecordSecure('sysapproval_approver')
                     if (ga.get(altrui)) {
                         ga.setValue('state', 'approved')
-                        updateVietato = ga.update() ? 'KO: update riuscito' : 'OK: update rifiutato'
+                        vietato = ga.update() ? 'KO: update riuscito' : 'OK: update rifiutato'
                     } else {
-                        updateVietato = 'OK: record non leggibile'
+                        vietato = 'OK: record non leggibile'
                     }
                 }
-                out.tests.push({
+                return {
                     test: 'negativo requester',
                     record_acquisto_visibili: visibili,
-                    update_approvazione_altrui: updateVietato,
-                    esito: visibili === 0 ? 'OK' : 'DA VERIFICARE',
-                })
-            } catch (e2) {
-                out.tests.push({ test: 'negativo requester', esito: 'ERRORE', errore: '' + e2 })
-            } finally {
-                imp.impersonate(original)
-            }
+                    update_approvazione_altrui: vietato,
+                    esito: visibili === 0 && vietato.indexOf('OK') === 0 ? 'OK' : 'DA VERIFICARE',
+                }
+            })
 
-            // T2 - delega attiva
-            try {
-                imp.impersonate(delegateId)
-                out.tests.push({
-                    test: 'T2 delega',
-                    approvazioni_visibili: this._myApprovals(true).length,
-                    esito: 'VERIFICARE con delega attiva creata da seed()',
-                })
-            } catch (e3) {
-                out.tests.push({ test: 'T2 delega', esito: 'ERRORE', errore: '' + e3 })
-            } finally {
-                imp.impersonate(original)
-            }
-
-            out.nota = 'T3, T4 e T5 dipendono dalle API della Fase 4 e vanno eseguiti li.'
+            out.nota =
+                'I test 3 e 5 consumano due approvazioni in attesa: dopo runTests() ne restano 8 e il test 8 puo segnalare alert mancanti. Prima della demo: reset(true) e poi seed() (test 10).'
             return this._ok(out)
         } catch (e) {
             return this._err(out, e)
@@ -429,7 +638,10 @@ ChatDemoRunner.prototype = {
     // Imposta assignment_group gia' all'insert. Se una regola preesistente lo
     // cambia, lo riscrive con setWorkflow(false) e solo sui record CHATDEMO:
     // la regola non viene toccata.
-    _createIncident: function (vals, groupId, caller, out) {
+    // silenzioso = true: setWorkflow(false). Nessuna business rule, quindi
+    // nessun task_sla reale e nessuno spostamento di gruppo: si usa solo per lo
+    // storico chiuso.
+    _createIncident: function (vals, groupId, caller, out, silenzioso) {
         try {
             var gr = new GlideRecord('incident')
             gr.initialize()
@@ -437,6 +649,7 @@ ChatDemoRunner.prototype = {
             gr.setValue('correlation_id', this.TAG)
             if (groupId) gr.setValue('assignment_group', groupId)
             if (caller) gr.setValue('caller_id', caller)
+            if (silenzioso === true) gr.setWorkflow(false)
             var id = gr.insert()
             if (!id) {
                 out.warnings.push('insert incident fallito: ' + vals.short_description)
@@ -444,7 +657,7 @@ ChatDemoRunner.prototype = {
             }
 
             var number = gr.getValue('number')
-            if (groupId) {
+            if (groupId && silenzioso !== true) {
                 var check = new GlideRecord('incident')
                 if (check.get(id)) {
                     var attuale = check.getValue('assignment_group')
@@ -500,14 +713,17 @@ ChatDemoRunner.prototype = {
         return res
     },
 
-    _createAcq: function (vals, tag, caller, out) {
+    // silenzioso = true: setWorkflow(false), quindi nessun flow e nessuna
+    // approvazione. Si usa solo per lo storico che alimenta i KPI.
+    _createAcq: function (vals, tag, caller, out, silenzioso) {
         try {
             var gr = new GlideRecord(this.T_ACQ)
             gr.initialize()
+            gr.setValue('state', 1)
             for (var k in vals) gr.setValue(k, vals[k])
             gr.setValue('correlation_id', tag)
             if (caller) gr.setValue('opened_by', caller)
-            gr.setValue('state', 1)
+            if (silenzioso === true) gr.setWorkflow(false)
             var id = gr.insert()
             if (!id) {
                 out.warnings.push('insert acquisto fallito: ' + vals.short_description)
@@ -520,14 +736,15 @@ ChatDemoRunner.prototype = {
         }
     },
 
-    _createHcx: function (vals, tag, caller, out) {
+    _createHcx: function (vals, tag, caller, out, silenzioso) {
         try {
             var gr = new GlideRecord(this.T_HCX)
             gr.initialize()
+            gr.setValue('state', 1)
             for (var k in vals) gr.setValue(k, vals[k])
             gr.setValue('correlation_id', tag)
             if (caller) gr.setValue('opened_by', caller)
-            gr.setValue('state', 1)
+            if (silenzioso === true) gr.setWorkflow(false)
             var id = gr.insert()
             if (!id) {
                 out.warnings.push('insert hcx fallito: ' + vals.short_description)
@@ -540,35 +757,117 @@ ChatDemoRunner.prototype = {
         }
     },
 
+    // 18 incident APERTI inseriti normalmente: li prende il motore SLA reale,
+    // che crea i task_sla sulle definizioni CHATDEMO.
+    // Lo storico dei mesi precedenti e' scritto con setWorkflow(false) e per
+    // ogni incident storico si inserisce un task_sla sintetico, anch'esso con
+    // setWorkflow(false): senza quello i KPI SLA avrebbero solo il mese in corso.
     _seedIncidents: function (groups, caller, out) {
-        var creati = 0
-        // Andamento richiesto: picco a settembre, calo a ottobre, risalita a novembre.
+        var res = { aperti: 0, storici: 0, sla_sintetici: 0, definizioni_sla: 0 }
+        var i, p, r
+
+        // --- aperti (motore reale)
+        for (i = 0; i < 18; i++) {
+            var apertura = new GlideDateTime()
+            apertura.addDaysLocalTime(-(i % 12))
+            r = this._createIncident(
+                {
+                    short_description: 'CHATDEMO - segnalazione aperta ' + (i + 1),
+                    category: ['software', 'hardware', 'network', 'inquiry'][i % 4],
+                    impact: (i % 3) + 1,
+                    urgency: (i % 3) + 1,
+                    state: i % 4 === 0 ? 1 : 2,
+                    opened_at: apertura.getValue(),
+                },
+                groups.length ? groups[i % groups.length] : null,
+                caller,
+                out,
+                false
+            )
+            if (r) res.aperti++
+        }
+
+        // --- storico chiuso: picco due mesi fa, calo, risalita
+        var defs = this._slaDefs(out)
+        res.definizioni_sla = defs.length
         var piano = [
-            { mesiFa: 5, n: 20 },
-            { mesiFa: 4, n: 22 },
-            { mesiFa: 3, n: 26 },
-            { mesiFa: 2, n: 42 },
-            { mesiFa: 1, n: 18 },
-            { mesiFa: 0, n: 24 },
+            { mesiFa: 5, n: 18, sforati: 3 },
+            { mesiFa: 4, n: 21, sforati: 4 },
+            { mesiFa: 3, n: 26, sforati: 7 },
+            { mesiFa: 2, n: 38, sforati: 14 },
+            { mesiFa: 1, n: 20, sforati: 3 },
         ]
-        for (var p = 0; p < piano.length; p++) {
-            for (var i = 0; i < piano[p].n; i++) {
-                var apertura = new GlideDateTime()
-                apertura.addMonthsLocalTime(-piano[p].mesiFa)
-                apertura.addDaysLocalTime(-(i % 25))
-                var r = this._createIncident(
+        for (p = 0; p < piano.length; p++) {
+            for (i = 0; i < piano[p].n; i++) {
+                var ap = new GlideDateTime()
+                ap.addMonthsLocalTime(-piano[p].mesiFa)
+                ap.addDaysLocalTime(-(i % 20))
+                var ch = new GlideDateTime(ap.getValue())
+                ch.addDaysLocalTime(1 + (i % 4))
+
+                r = this._createIncident(
                     {
-                        short_description: 'CHATDEMO - segnalazione ' + (creati + 1),
+                        short_description: 'CHATDEMO - segnalazione chiusa ' + piano[p].mesiFa + '-' + (i + 1),
                         category: ['software', 'hardware', 'network', 'inquiry'][i % 4],
                         impact: (i % 3) + 1,
                         urgency: (i % 3) + 1,
-                        opened_at: apertura.getValue(),
+                        state: 7,
+                        active: false,
+                        opened_at: ap.getValue(),
+                        resolved_at: ch.getValue(),
+                        closed_at: ch.getValue(),
+                        close_code: 'Solved (Permanently)',
+                        close_notes: 'CHATDEMO: storico sintetico per i KPI.',
                     },
                     groups.length ? groups[i % groups.length] : null,
                     caller,
-                    out
+                    out,
+                    true
                 )
-                if (r) creati++
+                if (!r) continue
+                res.storici++
+                res.sla_sintetici += this._seedTaskSla(r.sys_id, defs, ap, ch, i < piano[p].sforati, out)
+            }
+        }
+
+        return res
+    },
+
+    // Definizioni SLA della demo, cercate per nome: non dipende dai sys_id.
+    _slaDefs: function (out) {
+        var defs = []
+        try {
+            var gr = new GlideRecord('contract_sla')
+            gr.addEncodedQuery('nameSTARTSWITH' + this.TAG)
+            gr.setLimit(10)
+            gr.query()
+            while (gr.next()) defs.push({ sys_id: gr.getUniqueValue(), name: gr.getValue('name') })
+            if (!defs.length) out.warnings.push('nessuna definizione SLA CHATDEMO trovata: lo storico SLA resta vuoto')
+        } catch (e) {
+            out.warnings.push('lettura contract_sla: ' + e)
+        }
+        return defs
+    },
+
+    _seedTaskSla: function (taskId, defs, inizio, fine, sforato, out) {
+        var creati = 0
+        for (var d = 0; d < defs.length; d++) {
+            try {
+                var gr = new GlideRecord('task_sla')
+                gr.initialize()
+                gr.setValue('task', taskId)
+                gr.setValue('sla', defs[d].sys_id)
+                gr.setValue('stage', 'completed')
+                gr.setValue('active', false)
+                gr.setValue('has_breached', sforato)
+                gr.setValue('start_time', inizio.getValue())
+                gr.setValue('end_time', fine.getValue())
+                gr.setValue('percentage', sforato ? 130 : 70)
+                gr.setWorkflow(false)
+                if (gr.insert()) creati++
+            } catch (e) {
+                out.warnings.push('task_sla sintetico: ' + e)
+                return creati
             }
         }
         return creati

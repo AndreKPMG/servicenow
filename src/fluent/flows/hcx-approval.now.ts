@@ -32,8 +32,8 @@ Flow(
             {
                 $id: Now.ID['if_hcx_is_test'],
                 annotation: 'Record di test',
-                // @ts-ignore wfa.dataPill richiede la dot notation
-                condition: `${wfa.dataPill(params.trigger.current.correlation_id, 'string')}STARTSWITHCHATDEMO_TEST`,
+                // Condizione su campo del record: encoded query, non data pill.
+                condition: 'correlation_idSTARTSWITHCHATDEMO_TEST',
             },
             () => {
                 const approvalTest = wfa.action(
