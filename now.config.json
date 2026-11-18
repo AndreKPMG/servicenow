@@ -1,0 +1,6 @@
+{
+    "scope": "x_kpm95_chatdemo",
+    "scopeId": "8760fb80054948f9b070837813d4b15e",
+    "name": "Chat Demo",
+    "tsconfigPath": "./src/server/tsconfig.json"
+}
