@@ -390,3 +390,16 @@ con `correlation_id` che inizia per `CHATDEMO_TEST`. I test 3, 4 e 5 lo usano, q
 della demo non vengono mai consumate**. Il test 3 preferisce il record sotto i 10.000 per non far scattare
 il secondo livello. I test 8 e 9 girano invece come l'utente di `demo_approver` (sola lettura), perché gli
 alert obbligatori sono coperti dalle 10 approvazioni della demo.
+
+### Verifica dopo la ripubblicazione dei flow (18/11/2026, record di prova di Andrea)
+- `published_version` sui trigger **resta vuoto** anche dopo il Publish, ma i flow **partono**:
+  quindi quel campo non è l'indicatore di aggancio. La diagnosi precedente su quel campo era sbagliata.
+  Il segnale buono è `status = published` con `latest_snapshot` uguale a `master_snapshot`, più un solo trigger.
+  `checkFlows()` è stato corretto di conseguenza (`pronto` al posto di `agganciato`): **la correzione è nel
+  sorgente, non ancora sull'istanza**, perché un altro install riscriverebbe i flow appena ripubblicati.
+- ACQ0001005 e HCX0001003 (creati a mano, `correlation_id` vuoto → ramo else → `demo_approver`):
+  **1 solo** contesto CHATDEMO ciascuno, stato `WAITING`, nessun Error; **1 sola** approvazione
+  `requested` intestata a ccandre. Latenza misurata tra insert e approvazione: ~3 secondi.
+- L'altro contesto che compare per record (`Smart Prioritization: ...`) è un flow di piattaforma, non della demo.
+- Restano 3 contesti orfani del pilota (uno in ERROR) con `source_record` vuoto: `reset()` non pulisce
+  `sys_flow_context`, è solo rumore storico.

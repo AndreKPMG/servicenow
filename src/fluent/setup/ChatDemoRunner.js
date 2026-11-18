@@ -706,7 +706,10 @@ ChatDemoRunner.prototype = {
         }
     },
 
-    // Verifica che i flow siano attivi, pubblicati e agganciati ai trigger.
+    // Verifica che i flow siano attivi, pubblicati e con un solo trigger.
+    // NON si giudica da published_version sul trigger: sull'istanza quel campo
+    // resta vuoto anche con i flow che partono regolarmente. Il segnale buono e'
+    // status = published con latest_snapshot uguale a master_snapshot.
     checkFlows: function () {
         var res = []
         var gr = new GlideRecord('sys_hub_flow')
@@ -715,6 +718,8 @@ ChatDemoRunner.prototype = {
         gr.query()
         while (gr.next()) {
             var flowId = gr.getUniqueValue()
+            var latest = gr.getValue('latest_snapshot') || ''
+            var master = gr.getValue('master_snapshot') || ''
             var triggers = []
             var tr = new GlideRecord('sys_hub_trigger_instance_v2')
             tr.addQuery('flow', flowId)
@@ -731,9 +736,16 @@ ChatDemoRunner.prototype = {
                 flow: gr.getValue('name'),
                 active: gr.getValue('active'),
                 status: gr.getValue('status'),
+                snapshot_allineato: latest !== '' && latest === master,
                 trigger: triggers.length,
                 dettaglio: triggers,
-                agganciato: triggers.length === 1 && triggers[0].published_version !== '(vuoto)',
+                pronto:
+                    gr.getValue('active') === 'true' &&
+                    gr.getValue('status') === 'published' &&
+                    latest !== '' &&
+                    latest === master &&
+                    triggers.length === 1,
+                nota: 'published_version vuoto sul trigger non e un problema: non e il campo che dice se il flow parte.',
             })
         }
         return res
