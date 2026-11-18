@@ -16,24 +16,22 @@ ChatDemoRunner.prototype = {
             var groups = this._groupIds(out)
             var caller = this._userId('chatdemo.requester', out)
 
+            out.gruppo_ripristinato = 0
             var i
             for (i = 0; i < 5; i++) {
-                var inc = new GlideRecord('incident')
-                inc.initialize()
-                inc.setValue('short_description', 'CHATDEMO pilota - incident ' + (i + 1))
-                inc.setValue('description', 'Record di pilota generato da ChatDemoRunner. Dati inventati.')
-                inc.setValue('correlation_id', this.TAG)
-                inc.setValue('category', 'software')
-                inc.setValue('impact', (i % 3) + 1)
-                inc.setValue('urgency', (i % 3) + 1)
-                if (groups.length) inc.setValue('assignment_group', groups[i % groups.length])
-                if (caller) inc.setValue('caller_id', caller)
-                var incId = inc.insert()
-                if (incId) {
-                    out.incidents.push({ sys_id: incId, number: inc.getValue('number') })
-                } else {
-                    out.warnings.push('insert incident ' + (i + 1) + ' fallito')
-                }
+                var res = this._createIncident(
+                    {
+                        short_description: 'CHATDEMO pilota - incident ' + (i + 1),
+                        description: 'Record di pilota generato da ChatDemoRunner. Dati inventati.',
+                        category: 'software',
+                        impact: (i % 3) + 1,
+                        urgency: (i % 3) + 1,
+                    },
+                    groups.length ? groups[i % groups.length] : null,
+                    caller,
+                    out
+                )
+                if (res) out.incidents.push(res)
             }
 
             out.acquisti.push(
@@ -83,8 +81,20 @@ ChatDemoRunner.prototype = {
     pilotReport: function () {
         var out = { method: 'pilotReport' }
         try {
-            out.flow_contexts = this._flowContexts()
-            out.approvazioni = this._approvals()
+            out.flow = this.checkFlows()
+            out.per_record = this._perRecord()
+            out.duplicati = { flow_context: [], approvazioni_primo_livello: [] }
+            for (var i = 0; i < out.per_record.length; i++) {
+                var r = out.per_record[i]
+                if (r.flow_context > 1) out.duplicati.flow_context.push(r.number + ' (' + r.flow_context + ')')
+                if (r.approvazioni_l1 > 1)
+                    out.duplicati.approvazioni_primo_livello.push(r.number + ' (' + r.approvazioni_l1 + ')')
+            }
+            out.atteso = 'per ogni record: 1 flow context e 1 approvazione di primo livello'
+            out.esito_univocita =
+                out.duplicati.flow_context.length === 0 && out.duplicati.approvazioni_primo_livello.length === 0
+                    ? 'OK'
+                    : 'DOPPIONI'
             out.task_sla = this._taskSla()
             out.sys_email = this._emails()
             out.teams = this._teams()
@@ -97,6 +107,58 @@ ChatDemoRunner.prototype = {
         } catch (e) {
             return this._err(out, e)
         }
+    },
+
+    // Un record per riga: quanti flow context e quante approvazioni ha generato.
+    _perRecord: function () {
+        var righe = []
+        var tabelle = [this.T_ACQ, this.T_HCX]
+        for (var t = 0; t < tabelle.length; t++) {
+            var gr = new GlideRecord(tabelle[t])
+            gr.orderByDesc('sys_created_on')
+            gr.setLimit(50)
+            gr.query()
+            while (gr.next()) {
+                var id = gr.getUniqueValue()
+                righe.push({
+                    number: gr.getValue('number'),
+                    tabella: tabelle[t],
+                    stato: gr.getDisplayValue('state'),
+                    flow_context: this._countContexts(id),
+                    approvazioni_l1: this._countApprovals(id, false),
+                    approvazioni_l2: this._countApprovals(id, true),
+                })
+            }
+        }
+        return righe
+    },
+
+    _countContexts: function (recordId) {
+        var n = 0
+        try {
+            var gr = new GlideRecord('sys_flow_context')
+            gr.addEncodedQuery('source_record=' + recordId)
+            gr.setLimit(20)
+            gr.query()
+            while (gr.next()) n++
+        } catch (e) {
+            return -1
+        }
+        return n
+    },
+
+    _countApprovals: function (recordId, secondoLivello) {
+        var n = 0
+        var gr = new GlideRecord('sysapproval_approver')
+        gr.addQuery('sysapproval', recordId)
+        gr.setLimit(20)
+        gr.query()
+        while (gr.next()) {
+            var reason = gr.getValue('approval_reason') || ''
+            var isL2 = reason.indexOf('Secondo livello') === 0
+            if (isL2 === !!secondoLivello) n++
+        }
+        return n
     },
 
     // ------------------------------------------------------------------ seed
@@ -282,6 +344,7 @@ ChatDemoRunner.prototype = {
                 approvazioni: this._count('sysapproval_approver', 'source_tableIN' + this.T_ACQ + ',' + this.T_HCX),
                 task_sla: this._count('task_sla', 'task.correlation_idSTARTSWITH' + this.TAG),
                 delega: this._count('sys_user_delegate', 'user.user_nameSTARTSWITHchatdemo'),
+                sys_email: this._demoRecordIds().length ? this._countEmails() : 0,
             }
             out.conteggi = conteggi
 
@@ -290,7 +353,12 @@ ChatDemoRunner.prototype = {
                 return this._ok(out)
             }
 
+            // Le email vanno rimosse prima dei record: il collegamento e'
+            // sys_email.instance, che dopo la cancellazione non sarebbe piu' risolvibile.
+            var emailRimosse = this._purgeEmails()
+
             out.cancellati = {
+                sys_email: emailRimosse,
                 task_sla: this._purge('task_sla', 'task.correlation_idSTARTSWITH' + this.TAG),
                 approvazioni: this._purge('sysapproval_approver', 'source_tableIN' + this.T_ACQ + ',' + this.T_HCX),
                 acquisti: this._purge(this.T_ACQ, ''),
@@ -306,6 +374,131 @@ ChatDemoRunner.prototype = {
     },
 
     // ------------------------------------------------------------- interni
+
+    // sys_id di tutti i record CHATDEMO, usati per agganciare le email.
+    _demoRecordIds: function () {
+        var ids = []
+        var fonti = [
+            { t: 'incident', q: 'correlation_idSTARTSWITH' + this.TAG },
+            { t: this.T_ACQ, q: '' },
+            { t: this.T_HCX, q: '' },
+        ]
+        for (var i = 0; i < fonti.length; i++) {
+            var gr = new GlideRecord(fonti[i].t)
+            if (fonti[i].q) gr.addEncodedQuery(fonti[i].q)
+            gr.setLimit(5000)
+            gr.query()
+            while (gr.next()) ids.push(gr.getUniqueValue())
+        }
+        return ids
+    },
+
+    _countEmails: function () {
+        var ids = this._demoRecordIds()
+        var n = 0
+        for (var i = 0; i < ids.length; i += 100) {
+            var gr = new GlideRecord('sys_email')
+            gr.addEncodedQuery('instanceIN' + ids.slice(i, i + 100).join(','))
+            gr.setLimit(1000)
+            gr.query()
+            while (gr.next()) n++
+        }
+        return n
+    },
+
+    _purgeEmails: function () {
+        try {
+            var ids = this._demoRecordIds()
+            var n = 0
+            for (var i = 0; i < ids.length; i += 100) {
+                var gr = new GlideRecord('sys_email')
+                gr.addEncodedQuery('instanceIN' + ids.slice(i, i + 100).join(','))
+                gr.setLimit(1000)
+                gr.query()
+                while (gr.next()) {
+                    gr.setWorkflow(false)
+                    if (gr.deleteRecord()) n++
+                }
+            }
+            return n
+        } catch (e) {
+            return 'errore: ' + e
+        }
+    },
+
+    // Imposta assignment_group gia' all'insert. Se una regola preesistente lo
+    // cambia, lo riscrive con setWorkflow(false) e solo sui record CHATDEMO:
+    // la regola non viene toccata.
+    _createIncident: function (vals, groupId, caller, out) {
+        try {
+            var gr = new GlideRecord('incident')
+            gr.initialize()
+            for (var k in vals) gr.setValue(k, vals[k])
+            gr.setValue('correlation_id', this.TAG)
+            if (groupId) gr.setValue('assignment_group', groupId)
+            if (caller) gr.setValue('caller_id', caller)
+            var id = gr.insert()
+            if (!id) {
+                out.warnings.push('insert incident fallito: ' + vals.short_description)
+                return null
+            }
+
+            var number = gr.getValue('number')
+            if (groupId) {
+                var check = new GlideRecord('incident')
+                if (check.get(id)) {
+                    var attuale = check.getValue('assignment_group')
+                    var tag = check.getValue('correlation_id') || ''
+                    if (attuale !== groupId && tag.indexOf(this.TAG) === 0) {
+                        check.setValue('assignment_group', groupId)
+                        check.setWorkflow(false)
+                        if (check.update()) {
+                            out.gruppo_ripristinato = (out.gruppo_ripristinato || 0) + 1
+                        } else {
+                            out.warnings.push('ripristino gruppo fallito su ' + number)
+                        }
+                    }
+                }
+            }
+            return { sys_id: id, number: number }
+        } catch (e) {
+            out.warnings.push('errore incident: ' + e)
+            return null
+        }
+    },
+
+    // Verifica che i flow siano attivi, pubblicati e agganciati ai trigger.
+    checkFlows: function () {
+        var res = []
+        var gr = new GlideRecord('sys_hub_flow')
+        gr.addEncodedQuery('nameSTARTSWITHCHATDEMO')
+        gr.setLimit(10)
+        gr.query()
+        while (gr.next()) {
+            var flowId = gr.getUniqueValue()
+            var triggers = []
+            var tr = new GlideRecord('sys_hub_trigger_instance_v2')
+            tr.addQuery('flow', flowId)
+            tr.setLimit(20)
+            tr.query()
+            while (tr.next()) {
+                triggers.push({
+                    sys_id: tr.getUniqueValue(),
+                    tipo: tr.getValue('trigger_type'),
+                    published_version: tr.getValue('published_version') || '(vuoto)',
+                })
+            }
+            res.push({
+                flow: gr.getValue('name'),
+                active: gr.getValue('active'),
+                status: gr.getValue('status'),
+                trigger: triggers.length,
+                dettaglio: triggers,
+                agganciato: triggers.length === 1 && triggers[0].published_version !== '(vuoto)',
+            })
+        }
+        return res
+    },
 
     _createAcq: function (vals, tag, caller, out) {
         try {
@@ -360,24 +553,22 @@ ChatDemoRunner.prototype = {
         ]
         for (var p = 0; p < piano.length; p++) {
             for (var i = 0; i < piano[p].n; i++) {
-                try {
-                    var gr = new GlideRecord('incident')
-                    gr.initialize()
-                    gr.setValue('short_description', 'CHATDEMO - segnalazione ' + (creati + 1))
-                    gr.setValue('correlation_id', this.TAG)
-                    gr.setValue('category', ['software', 'hardware', 'network', 'inquiry'][i % 4])
-                    gr.setValue('impact', (i % 3) + 1)
-                    gr.setValue('urgency', (i % 3) + 1)
-                    if (groups.length) gr.setValue('assignment_group', groups[i % groups.length])
-                    if (caller) gr.setValue('caller_id', caller)
-                    var apertura = new GlideDateTime()
-                    apertura.addMonthsLocalTime(-piano[p].mesiFa)
-                    apertura.addDaysLocalTime(-(i % 25))
-                    gr.setValue('opened_at', apertura.getValue())
-                    if (gr.insert()) creati++
-                } catch (e) {
-                    out.warnings.push('incident seed: ' + e)
-                }
+                var apertura = new GlideDateTime()
+                apertura.addMonthsLocalTime(-piano[p].mesiFa)
+                apertura.addDaysLocalTime(-(i % 25))
+                var r = this._createIncident(
+                    {
+                        short_description: 'CHATDEMO - segnalazione ' + (creati + 1),
+                        category: ['software', 'hardware', 'network', 'inquiry'][i % 4],
+                        impact: (i % 3) + 1,
+                        urgency: (i % 3) + 1,
+                        opened_at: apertura.getValue(),
+                    },
+                    groups.length ? groups[i % groups.length] : null,
+                    caller,
+                    out
+                )
+                if (r) creati++
             }
         }
         return creati
