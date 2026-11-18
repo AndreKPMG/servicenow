@@ -310,261 +310,333 @@ ChatDemoRunner.prototype = {
 
     // ------------------------------------------------------------------ test
 
-    // I test 1-9 della tabella di Fase 6, piu' il test negativo sul requester.
-    // Girano in impersonation e chiamano ChatDemoApi, cioe' la stessa logica che
-    // sta dietro le quattro API REST: quello che passa qui passa via REST.
-    // Il test 10 (reset + seed) e' una sequenza manuale, non automatizzabile qui.
-    // I test che SCRIVONO (3, 4, 5) agiscono solo su record CHATDEMO_TEST: le 10
-    // approvazioni della demo non vengono mai consumate.
-    // Nessun test si ferma senza esito: ogni errore finisce nella riga del test.
-    runTests: function () {
-        var out = { method: 'runTests', tests: [], warnings: [] }
+    // GlideImpersonate e' vietato dentro un'app scoped: anche lanciando da
+    // Scripts - Background in Global, il codice di questo Script Include gira
+    // nello scope dell'app e la chiamata viene rifiutata.
+    // Quindi l'impersonation la fa lo script Global, che chiama runTest(id) una
+    // volta per utente. Qui dentro non si impersona nessuno: ogni test agisce
+    // come l'utente corrente.
+    //
+    // Lo script da incollare in Scripts - Background (scope Global) e' in
+    // scriptGlobaleTest(), che lo restituisce come stringa pronta da copiare.
+    //
+    // id dei test: '1', '2', '34', '5', '6', '7', '89', 'ruolo', 'negativo'.
+    // Ogni chiamata restituisce un array di righe di esito e non solleva mai:
+    // l'errore finisce nella riga del test.
+    runTest: function (id) {
+        var out = { warnings: [] }
         try {
-            var approverId = this._userId('chatdemo.approver', out)
-            var delegateId = this._userId('chatdemo.delegate', out)
-            var requesterId = this._userId('chatdemo.requester', out)
-
-            var imp = this._impersonator(out)
-            if (!imp) {
-                out.tests.push({
-                    test: 'impersonation',
-                    esito: 'NON DISPONIBILE',
-                    nota: 'GlideImpersonate non accessibile: eseguire runTests() da Scripts - Background in scope global.',
-                })
-                return this._ok(out)
+            switch ('' + id) {
+                case '1':
+                    return this._t1(out)
+                case '2':
+                    return this._t2(out)
+                case '34':
+                    return this._t34(out)
+                case '5':
+                    return this._t5(out)
+                case '6':
+                    return this._t6(out)
+                case '7':
+                    return this._t7(out)
+                case '89':
+                    return this._t89(out)
+                case 'ruolo':
+                    return this._tRuolo(out)
+                case 'negativo':
+                    return this._tNegativo(out)
+                default:
+                    return [{ test: id, esito: 'ID NON VALIDO', validi: ['1', '2', '34', '5', '6', '7', '89', 'ruolo', 'negativo'] }]
             }
-            var original = gs.getUserID()
-            var self = this
-            var stato = {}
-
-            var come = function (userId, nome, fn) {
-                try {
-                    imp.impersonate(userId)
-                    var r = fn()
-                    if (r) out.tests.push(r)
-                } catch (e) {
-                    out.tests.push({ test: nome, esito: 'ERRORE', errore: '' + e })
-                } finally {
-                    try {
-                        imp.impersonate(original)
-                    } catch (e2) {
-                        out.warnings.push('ripristino utente: ' + e2)
-                    }
-                }
-            }
-
-            // 1 - l'approvatore vede le proprie approvazioni, solo sulle due tabelle demo
-            come(approverId, '1', function () {
-                var r = new ChatDemoApi().approvalsMine()
-                var soloDemo = true
-                for (var i = 0; i < r.approvazioni.length; i++) {
-                    var a = r.approvazioni[i].ambito
-                    if (a !== 'acquisti' && a !== 'hcx') soloDemo = false
-                }
-                stato.elenco = r.approvazioni
-                return {
-                    test: '1 approvals/mine solo tabelle demo',
-                    trovate: r.totale,
-                    esito: r.totale > 0 && soloDemo ? 'OK' : r.totale === 0 ? 'VUOTO: lanciare prima seed()' : 'KO',
-                }
-            })
-
-            // 2 - il delegato vede le approvazioni di chi lo ha delegato
-            come(delegateId, '2', function () {
-                var r = new ChatDemoApi().approvalsMine()
-                var perDelega = 0
-                for (var i = 0; i < r.approvazioni.length; i++) if (r.approvazioni[i].delegata) perDelega++
-                return {
-                    test: '2 approvazione delegata',
-                    trovate: r.totale,
-                    per_delega: perDelega,
-                    esito: perDelega > 0 ? 'OK' : 'KO: nessuna approvazione per delega',
-                }
-            })
-
-            // 3 e 4 - approva, poi riprova la stessa approvazione: 409 NOT_PENDING
-            come(approverId, '3 e 4', function () {
-                var api = new ChatDemoApi()
-                // Solo record CHATDEMO_TEST: le 10 approvazioni della demo non si toccano.
-                var elenco = self._approvazioniTest('acquisti')
-                if (!elenco.length) {
-                    out.tests.push({ test: '4 seconda decisione', esito: 'NON ESEGUITO: manca il test 3' })
-                    return {
-                        test: '3 approva dal tool',
-                        esito: 'VUOTO: nessun acquisto CHATDEMO_TEST in attesa per chatdemo.approver',
-                    }
-                }
-                // Preferisce il record sotto i 10.000: quello sopra fa scattare il
-                // secondo livello e sporcherebbe il conteggio delle approvazioni.
-                var scelto = elenco[0]
-                for (var j = 0; j < elenco.length; j++) {
-                    if (elenco[j].importo > 0 && elenco[j].importo <= 10000) {
-                        scelto = elenco[j]
-                        break
-                    }
-                }
-                var id = scelto.approval_sys_id
-                var primo = api.decide(id, 'approved', 'Approvato dal test automatico.')
-                var secondo = api.decide(id, 'approved', 'Secondo tentativo.')
-                out.tests.push({
-                    test: '4 seconda decisione sulla stessa approvazione',
-                    http: secondo.http,
-                    codice: secondo.codice,
-                    esito: secondo.http === 409 && secondo.codice === 'NOT_PENDING' ? 'OK' : 'KO',
-                })
-                return {
-                    test: '3 approva dal tool',
-                    approvazione: scelto.numero,
-                    correlation_id: scelto.correlation_id,
-                    http: primo.http,
-                    stato: primo.stato_riletto || primo.codice,
-                    esito: primo.http === 200 && primo.stato_riletto === 'approved' ? 'OK' : 'KO',
-                    nota: 'Il record sorgente lo aggiorna il flow in background: confermare con pilotReport().',
-                }
-            })
-
-            // 5 - rifiuto senza commento
-            come(approverId, '5', function () {
-                // Anche qui solo record CHATDEMO_TEST. Il 400 non cambia stato,
-                // quindi non consuma nulla, ma il bersaglio resta un record di test.
-                var elenco = self._approvazioniTest()
-                if (!elenco.length) {
-                    return {
-                        test: '5 rifiuto senza commento',
-                        esito: 'VUOTO: nessun record CHATDEMO_TEST in attesa per chatdemo.approver',
-                    }
-                }
-                var r = new ChatDemoApi().decide(elenco[0].approval_sys_id, 'rejected', '')
-                return {
-                    test: '5 rifiuto senza commento',
-                    approvazione: elenco[0].numero,
-                    correlation_id: elenco[0].correlation_id,
-                    http: r.http,
-                    codice: r.codice,
-                    esito: r.http === 400 && r.codice === 'COMMENT_REQUIRED' ? 'OK' : 'KO',
-                }
-            })
-
-            // 6 - chi non e' approvatore non decide
-            come(requesterId, '6', function () {
-                var altrui = self._firstApprovalNotOf(requesterId)
-                if (!altrui) return { test: '6 utente non approvatore', esito: 'VUOTO: nessuna approvazione di altri' }
-                var r = new ChatDemoApi().decide(altrui, 'approved', 'Tentativo non autorizzato.')
-                return {
-                    test: '6 utente non approvatore',
-                    http: r.http,
-                    codice: r.codice,
-                    esito: r.codice === 'NOT_APPROVER' || r.codice === 'NOT_FOUND' ? 'OK' : 'KO',
-                }
-            })
-
-            // 7 - KPI confrontati con il conteggio diretto, e solo aggregati
-            come(approverId, '7', function () {
-                var api = new ChatDemoApi()
-                var t = api.ticketsTrend(6, 'priority')
-                var sla = api.slaPerformance(6)
-                var attesi = self._count('incident', 'correlation_idSTARTSWITH' + self.TAG + '^active=true')
-                var soloAggregati = true
-                for (var i = 0; i < t.per_mese.length; i++) {
-                    if (t.per_mese[i].sys_id || t.per_mese[i].numero) soloAggregati = false
-                }
-                return {
-                    test: '7 KPI contro conteggio diretto',
-                    backlog_api: t.backlog.totale,
-                    backlog_atteso: attesi,
-                    mesi_trend: t.per_mese.length,
-                    mesi_sla: sla.per_mese.length,
-                    definizioni_sla: sla.definizioni_considerate,
-                    esito: t.backlog.totale === attesi && soloAggregati ? 'OK' : 'KO',
-                }
-            })
-
-            // 8 e 9 - alert attesi presenti, campi fuori perimetro assenti
-            // 8 e 9 girano come chi conduce la demo: le dieci approvazioni che
-            // coprono tutti gli alert sono sue. Sono letture, non consumano nulla.
-            come(this._demoApproverId(out) || approverId, '8 e 9', function () {
-                var api = new ChatDemoApi()
-                var elenco = api.approvalsMine().approvazioni
-                if (!elenco.length) {
-                    out.tests.push({ test: '9 campi fuori perimetro', esito: 'VUOTO' })
-                    return { test: '8 alert obbligatori', esito: 'VUOTO: nessuna approvazione in attesa' }
-                }
-                var ammessiAcq = {
-                    ambito: 1, numero: 1, titolo: 1, richiedente: 1, fornitore: 1, categoria: 1, importo: 1,
-                    budget_residuo: 1, centro_di_costo: 1, motivazione: 1, preventivo_allegato: 1,
-                    alert: 1, dati_mancanti: 1,
-                }
-                var ammessiHcx = {
-                    ambito: 1, numero: 1, titolo: 1, richiedente: 1, hcp: 1, specializzazione: 1, tipo_evento: 1,
-                    data_evento: 1, compenso_proposto: 1, fair_market_value: 1, cv_ricevuto: 1,
-                    contratto_firmato: 1, verifica_compliance: 1, alert: 1, dati_mancanti: 1,
-                }
-                var alertVisti = {}
-                var extra = []
-                for (var i = 0; i < elenco.length; i++) {
-                    var ctx = api.skillContext(elenco[i].approval_sys_id)
-                    if (ctx.errore) {
-                        out.warnings.push('skillContext ' + elenco[i].numero + ': ' + ctx.errore)
-                        continue
-                    }
-                    var ammessi = ctx.ambito === 'acquisti' ? ammessiAcq : ammessiHcx
-                    for (var k in ctx) if (!ammessi[k]) extra.push(ctx.ambito + '.' + k)
-                    for (var a = 0; a < ctx.alert.length; a++) alertVisti[ctx.alert[a]] = 1
-                }
-                var attesi = ['BUDGET_EXCEEDED', 'QUOTE_MISSING', 'HIGH_VALUE', 'FEE_OVER_FMV', 'CV_MISSING', 'CONTRACT_MISSING']
-                var mancanti = []
-                for (var x = 0; x < attesi.length; x++) if (!alertVisti[attesi[x]]) mancanti.push(attesi[x])
-                out.tests.push({
-                    test: '9 campi fuori perimetro nella skill',
-                    campi_non_ammessi: extra,
-                    esito: extra.length === 0 ? 'OK' : 'KO',
-                })
-                return {
-                    test: '8 alert obbligatori',
-                    alert_trovati: Object.keys ? Object.keys(alertVisti) : alertVisti,
-                    alert_mancanti: mancanti,
-                    esito: mancanti.length === 0 ? 'OK' : 'KO: casi non coperti o gia consumati dai test 3 e 5',
-                }
-            })
-
-            // Ruolo KPI: il requester non ce l'ha, quindi le route rispondono 403
-            come(requesterId, 'ruolo KPI', function () {
-                var haRuolo = gs.hasRole(self.ROLE_USER)
-                return {
-                    test: 'ruolo KPI assente sul requester',
-                    ruolo_presente: haRuolo,
-                    esito: haRuolo ? 'KO: il requester ha il ruolo KPI' : 'OK: le route KPI rispondono 403 ROLE_REQUIRED',
-                }
-            })
-
-            // Negativo - il requester non legge i record altrui ne aggiorna approvazioni non sue
-            come(requesterId, 'negativo requester', function () {
-                var visibili = self._countSecure(self.T_ACQ)
-                var vietato = 'non testato'
-                var altrui = self._firstApprovalNotOf(requesterId)
-                if (altrui) {
-                    var ga = new GlideRecordSecure('sysapproval_approver')
-                    if (ga.get(altrui)) {
-                        ga.setValue('state', 'approved')
-                        vietato = ga.update() ? 'KO: update riuscito' : 'OK: update rifiutato'
-                    } else {
-                        vietato = 'OK: record non leggibile'
-                    }
-                }
-                return {
-                    test: 'negativo requester',
-                    record_acquisto_visibili: visibili,
-                    update_approvazione_altrui: vietato,
-                    esito: visibili === 0 && vietato.indexOf('OK') === 0 ? 'OK' : 'DA VERIFICARE',
-                }
-            })
-
-            out.nota =
-                'I test che scrivono agiscono solo su record CHATDEMO_TEST: le 10 approvazioni della demo restano intatte. Il test 3 consuma una approvazione di test, il 5 non consuma nulla.'
-            return this._ok(out)
         } catch (e) {
-            return this._err(out, e)
+            return [{ test: id, esito: 'ERRORE', errore: '' + e, warnings: out.warnings }]
         }
+    },
+
+    // Utenti, per lo script Global che deve impersonarli.
+    utente: function (userName) {
+        var out = { warnings: [] }
+        return this._userId(userName, out)
+    },
+
+    utenteDemo: function () {
+        var out = { warnings: [] }
+        return this._demoApproverId(out)
+    },
+
+    // 1 - l'utente vede le proprie approvazioni, solo sulle due tabelle demo
+    _t1: function (out) {
+        var r = new ChatDemoApi().approvalsMine()
+        var soloDemo = true
+        for (var i = 0; i < r.approvazioni.length; i++) {
+            var a = r.approvazioni[i].ambito
+            if (a !== 'acquisti' && a !== 'hcx') soloDemo = false
+        }
+        return [
+            {
+                test: '1 approvals/mine solo tabelle demo',
+                utente: gs.getUserName(),
+                trovate: r.totale,
+                esito: r.totale > 0 && soloDemo ? 'OK' : r.totale === 0 ? 'VUOTO: lanciare prima seed()' : 'KO',
+            },
+        ]
+    },
+
+    // 2 - il delegato vede le approvazioni di chi lo ha delegato
+    _t2: function (out) {
+        var r = new ChatDemoApi().approvalsMine()
+        var perDelega = 0
+        for (var i = 0; i < r.approvazioni.length; i++) if (r.approvazioni[i].delegata) perDelega++
+        return [
+            {
+                test: '2 approvazione delegata',
+                utente: gs.getUserName(),
+                trovate: r.totale,
+                per_delega: perDelega,
+                esito: perDelega > 0 ? 'OK' : 'KO: nessuna approvazione per delega',
+            },
+        ]
+    },
+
+    // 3 e 4 - approva, poi riprova la stessa approvazione: 409 NOT_PENDING.
+    // Solo record CHATDEMO_TEST: le 10 approvazioni della demo non si toccano.
+    _t34: function (out) {
+        var api = new ChatDemoApi()
+        var elenco = this._approvazioniTest('acquisti')
+        if (!elenco.length) {
+            return [
+                { test: '3 approva dal tool', esito: 'VUOTO: nessun acquisto CHATDEMO_TEST in attesa per ' + gs.getUserName() },
+                { test: '4 seconda decisione', esito: 'NON ESEGUITO: manca il test 3' },
+            ]
+        }
+        // Preferisce il record sotto i 10.000: quello sopra fa scattare il
+        // secondo livello e sporcherebbe il conteggio delle approvazioni.
+        var scelto = elenco[0]
+        for (var j = 0; j < elenco.length; j++) {
+            if (elenco[j].importo > 0 && elenco[j].importo <= 10000) {
+                scelto = elenco[j]
+                break
+            }
+        }
+        var primo = api.decide(scelto.approval_sys_id, 'approved', 'Approvato dal test automatico.')
+        var secondo = api.decide(scelto.approval_sys_id, 'approved', 'Secondo tentativo.')
+        return [
+            {
+                test: '3 approva dal tool',
+                approvazione: scelto.numero,
+                correlation_id: scelto.correlation_id,
+                http: primo.http,
+                stato: primo.stato_riletto || primo.codice,
+                esito: primo.http === 200 && primo.stato_riletto === 'approved' ? 'OK' : 'KO',
+                nota: 'Il record sorgente lo aggiorna il flow in background: confermare con pilotReport().',
+            },
+            {
+                test: '4 seconda decisione sulla stessa approvazione',
+                http: secondo.http,
+                codice: secondo.codice,
+                esito: secondo.http === 409 && secondo.codice === 'NOT_PENDING' ? 'OK' : 'KO',
+            },
+        ]
+    },
+
+    // 5 - rifiuto senza commento. Anche qui solo record CHATDEMO_TEST: il 400
+    // non cambia stato, quindi non consuma nulla, ma il bersaglio resta di test.
+    _t5: function (out) {
+        var elenco = this._approvazioniTest()
+        if (!elenco.length) {
+            return [{ test: '5 rifiuto senza commento', esito: 'VUOTO: nessun record CHATDEMO_TEST in attesa per ' + gs.getUserName() }]
+        }
+        var r = new ChatDemoApi().decide(elenco[0].approval_sys_id, 'rejected', '')
+        return [
+            {
+                test: '5 rifiuto senza commento',
+                approvazione: elenco[0].numero,
+                correlation_id: elenco[0].correlation_id,
+                http: r.http,
+                codice: r.codice,
+                esito: r.http === 400 && r.codice === 'COMMENT_REQUIRED' ? 'OK' : 'KO',
+            },
+        ]
+    },
+
+    // 6 - chi non e' approvatore non decide
+    _t6: function (out) {
+        var me = gs.getUserID()
+        var altrui = this._firstApprovalNotOf(me)
+        if (!altrui) return [{ test: '6 utente non approvatore', esito: 'VUOTO: nessuna approvazione di altri' }]
+        var r = new ChatDemoApi().decide(altrui, 'approved', 'Tentativo non autorizzato.')
+        return [
+            {
+                test: '6 utente non approvatore',
+                utente: gs.getUserName(),
+                http: r.http,
+                codice: r.codice,
+                esito: r.codice === 'NOT_APPROVER' || r.codice === 'NOT_FOUND' ? 'OK' : 'KO',
+            },
+        ]
+    },
+
+    // 7 - KPI confrontati con il conteggio diretto, e solo aggregati
+    _t7: function (out) {
+        var api = new ChatDemoApi()
+        var t = api.ticketsTrend(6, 'priority')
+        var sla = api.slaPerformance(6)
+        var attesi = this._count('incident', 'correlation_idSTARTSWITH' + this.TAG + '^active=true')
+        var soloAggregati = true
+        for (var i = 0; i < t.per_mese.length; i++) {
+            if (t.per_mese[i].sys_id || t.per_mese[i].numero) soloAggregati = false
+        }
+        return [
+            {
+                test: '7 KPI contro conteggio diretto',
+                backlog_api: t.backlog.totale,
+                backlog_atteso: attesi,
+                mesi_trend: t.per_mese.length,
+                mesi_sla: sla.per_mese.length,
+                definizioni_sla: sla.definizioni_considerate,
+                esito: t.backlog.totale === attesi && soloAggregati ? 'OK' : 'KO',
+            },
+        ]
+    },
+
+    // 8 e 9 - alert attesi presenti, campi fuori perimetro assenti.
+    // Da lanciare come l'utente della demo: le 10 approvazioni che coprono
+    // tutti gli alert sono sue. Sono letture, non consumano nulla.
+    _t89: function (out) {
+        var api = new ChatDemoApi()
+        var elenco = api.approvalsMine().approvazioni
+        if (!elenco.length) {
+            return [
+                { test: '8 alert obbligatori', esito: 'VUOTO: nessuna approvazione in attesa per ' + gs.getUserName() },
+                { test: '9 campi fuori perimetro', esito: 'VUOTO' },
+            ]
+        }
+        var ammessiAcq = {
+            ambito: 1, numero: 1, titolo: 1, richiedente: 1, fornitore: 1, categoria: 1, importo: 1,
+            budget_residuo: 1, centro_di_costo: 1, motivazione: 1, preventivo_allegato: 1,
+            alert: 1, dati_mancanti: 1,
+        }
+        var ammessiHcx = {
+            ambito: 1, numero: 1, titolo: 1, richiedente: 1, hcp: 1, specializzazione: 1, tipo_evento: 1,
+            data_evento: 1, compenso_proposto: 1, fair_market_value: 1, cv_ricevuto: 1,
+            contratto_firmato: 1, verifica_compliance: 1, alert: 1, dati_mancanti: 1,
+        }
+        var alertVisti = {}
+        var extra = []
+        for (var i = 0; i < elenco.length; i++) {
+            var ctx = api.skillContext(elenco[i].approval_sys_id)
+            if (ctx.errore) {
+                out.warnings.push('skillContext ' + elenco[i].numero + ': ' + ctx.errore)
+                continue
+            }
+            var ammessi = ctx.ambito === 'acquisti' ? ammessiAcq : ammessiHcx
+            for (var k in ctx) if (!ammessi[k]) extra.push(ctx.ambito + '.' + k)
+            for (var a = 0; a < ctx.alert.length; a++) alertVisti[ctx.alert[a]] = 1
+        }
+        var attesi = ['BUDGET_EXCEEDED', 'QUOTE_MISSING', 'HIGH_VALUE', 'FEE_OVER_FMV', 'CV_MISSING', 'CONTRACT_MISSING']
+        var trovati = []
+        var mancanti = []
+        for (var x = 0; x < attesi.length; x++) {
+            if (alertVisti[attesi[x]]) trovati.push(attesi[x])
+            else mancanti.push(attesi[x])
+        }
+        return [
+            {
+                test: '8 alert obbligatori',
+                utente: gs.getUserName(),
+                approvazioni_lette: elenco.length,
+                alert_trovati: trovati,
+                alert_mancanti: mancanti,
+                esito: mancanti.length === 0 ? 'OK' : 'KO: casi non coperti',
+                warnings: out.warnings,
+            },
+            {
+                test: '9 campi fuori perimetro nella skill',
+                campi_non_ammessi: extra,
+                esito: extra.length === 0 ? 'OK' : 'KO',
+            },
+        ]
+    },
+
+    // Ruolo KPI: chi non lo ha riceve 403 dalle route KPI
+    _tRuolo: function (out) {
+        var haRuolo = gs.hasRole(this.ROLE_USER)
+        return [
+            {
+                test: 'ruolo KPI',
+                utente: gs.getUserName(),
+                ruolo_presente: haRuolo,
+                esito: haRuolo ? 'KO: questo utente ha il ruolo KPI' : 'OK: le route KPI rispondono 403 ROLE_REQUIRED',
+            },
+        ]
+    },
+
+    // Negativo - non legge i record altrui ne aggiorna approvazioni non sue
+    _tNegativo: function (out) {
+        var me = gs.getUserID()
+        var visibili = this._countSecure(this.T_ACQ)
+        var vietato = 'non testato'
+        var altrui = this._firstApprovalNotOf(me)
+        if (altrui) {
+            var ga = new GlideRecordSecure('sysapproval_approver')
+            if (ga.get(altrui)) {
+                ga.setValue('state', 'approved')
+                vietato = ga.update() ? 'KO: update riuscito' : 'OK: update rifiutato'
+            } else {
+                vietato = 'OK: record non leggibile'
+            }
+        }
+        return [
+            {
+                test: 'negativo requester',
+                utente: gs.getUserName(),
+                record_acquisto_visibili: visibili,
+                update_approvazione_altrui: vietato,
+                esito: visibili === 0 && vietato.indexOf('OK') === 0 ? 'OK' : 'DA VERIFICARE',
+            },
+        ]
+    },
+
+    // runTests() non puo' funzionare da qui: GlideImpersonate e' vietato in
+    // scope. Restituisce lo script Global da incollare in Scripts - Background.
+    runTests: function () {
+        return {
+            method: 'runTests',
+            esito: 'NON ESEGUIBILE DA SCOPE',
+            motivo: 'GlideImpersonate is not allowed in scoped applications: l impersonation deve stare nello script Global.',
+            cosa_fare: 'Incollare in Scripts - Background (scope Global) lo script restituito da scriptGlobaleTest().',
+        }
+    },
+
+    // Lo script Global pronto da copiare: fa lui l'impersonation e chiama
+    // runTest() una volta per utente.
+    scriptGlobaleTest: function () {
+        var righe = [
+            "var R = new x_kpm95_chatdemo.ChatDemoRunner();",
+            "var imp = new GlideImpersonate();",
+            "var orig = gs.getUserID();",
+            "var esiti = [];",
+            "function come(utente, etichetta, ids) {",
+            "    if (!utente) { esiti.push({ test: etichetta, esito: 'UTENTE NON TROVATO' }); return; }",
+            "    try {",
+            "        imp.impersonate(utente);",
+            "        for (var i = 0; i < ids.length; i++) {",
+            "            var r = R.runTest(ids[i]);",
+            "            for (var j = 0; j < r.length; j++) esiti.push(r[j]);",
+            "        }",
+            "    } catch (e) {",
+            "        esiti.push({ test: etichetta, esito: 'ERRORE', errore: '' + e });",
+            "    } finally {",
+            "        imp.impersonate(orig);",
+            "    }",
+            "}",
+            "come(R.utente('chatdemo.approver'), 'approver', ['1', '34', '5', '7']);",
+            "come(R.utente('chatdemo.delegate'), 'delegate', ['2']);",
+            "come(R.utente('chatdemo.requester'), 'requester', ['6', 'ruolo', 'negativo']);",
+            "come(R.utenteDemo(), 'utente della demo', ['89']);",
+            "gs.print(JSON.stringify(esiti, null, 2));",
+        ]
+        return righe.join('\n')
     },
 
     // ----------------------------------------------------------------- reset

@@ -403,3 +403,20 @@ alert obbligatori sono coperti dalle 10 approvazioni della demo.
 - L'altro contesto che compare per record (`Smart Prioritization: ...`) è un flow di piattaforma, non della demo.
 - Restano 3 contesti orfani del pilota (uno in ERROR) con `source_record` vuoto: `reset()` non pulisce
   `sys_flow_context`, è solo rumore storico.
+
+### GlideImpersonate non è usabile da uno Script Include scoped
+`runTests()` lanciato da Scripts - Background in Global falliva con
+`java.lang.SecurityException: GlideImpersonate is not allowed in scoped applications`: il codice dello
+Script Include gira **nello scope dell'app** anche quando la chiamata parte da Global, quindi la
+restrizione scatta comunque.
+
+Ristrutturato: l'impersonation la fa lo **script Global**, che chiama `runTest(id)` una volta per utente.
+- `runTest(id)` con id `'1' | '2' | '34' | '5' | '6' | '7' | '89' | 'ruolo' | 'negativo'`: non impersona
+  nessuno, agisce come l'utente corrente, restituisce un array di righe di esito e non solleva mai.
+- `utente(userName)` e `utenteDemo()`: lookup dei sys_id per lo script Global.
+- `scriptGlobaleTest()`: restituisce come stringa lo script Global pronto da incollare.
+- `runTests()` ora spiega soltanto perché non può funzionare da scope.
+
+Il messaggio `Source descriptor is empty ... RCA policy is set to 'Tracking'` è atteso e innocuo:
+`ChatDemoRunner` è `accessibleFrom: 'public'` con `callerAccess: 'tracking'`, quindi la chiamata
+cross-scope è permessa e solo registrata. Con policy `Restricted` servirebbe un record RCA.
