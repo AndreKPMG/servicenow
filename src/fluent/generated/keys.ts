@@ -61,9 +61,53 @@ declare global {
                         table: 'sys_security_acl'
                         id: '8a1d5c3c63a943faa413cbe301f95916'
                     }
+                    act_acq_ask: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'eb2c828a7311429ca1bb50893ba4e312'
+                    }
+                    act_acq_ask_l2: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '9263efb49c1d4efb898372713160b21b'
+                    }
+                    act_acq_lookup_approver: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'cc16c44be0344d33a2d0092e0bf534a3'
+                    }
+                    act_acq_set_approved: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '6aec07a8309c4c848926d17cd110b2ba'
+                    }
+                    act_acq_set_rejected: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'fb66601eb96244e8a709f95d5b3228ff'
+                    }
+                    act_hcx_ask: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'f6380826cccb4573a449b28be1a04d2b'
+                    }
+                    act_hcx_lookup_approver: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'ef7ed34a76d34792aaa80e37a23cc1ef'
+                    }
+                    act_hcx_set_approved: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'c7edb22336fd4cb4a6fa4aeed3eb8b82'
+                    }
+                    act_hcx_set_rejected: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '85c55b1fe7304cb8a4619ee8fb4e5ea9'
+                    }
                     bom_json: {
                         table: 'sys_module'
                         id: '30879ef3d4454e9fa7a6166fe6023022'
+                    }
+                    flow_acq_approval: {
+                        table: 'sys_hub_flow'
+                        id: 'e60f581b9ed248d9a7b2f616e35a8a55'
+                    }
+                    flow_hcx_approval: {
+                        table: 'sys_hub_flow'
+                        id: '455bb2da748742239335c6f4f6825dde'
                     }
                     grp_applicazioni: {
                         table: 'sys_user_group'
@@ -81,17 +125,94 @@ declare global {
                         table: 'sys_user_group'
                         id: '362f9b196b3147b7b95c2e361e58aa65'
                     }
+                    if_acq_approved: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '837c3cdc8fdc4c5b9e44d98b75aa44c2'
+                    }
+                    if_acq_high_value: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '1a1f8b8336ca4b139e90ca1e32de4e88'
+                    }
+                    if_acq_rejected: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'd2a1edb3401b4eb0a45c103c616f4a89'
+                    }
+                    if_hcx_approved: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'a5c8462e3f0b4449bbe1f78e9827b587'
+                    }
+                    if_hcx_rejected: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '098865578f864bbeaa0a1bbb121a5396'
+                    }
+                    job_chatdemo_setup: {
+                        table: 'sysauto_script'
+                        id: 'bc6ff86fd50a4d40a47fe0eac290c58a'
+                    }
                     package_json: {
                         table: 'sys_module'
                         id: '53879dc90c68438a9d6729c2d302e26a'
+                    }
+                    pilot_acq_probe: {
+                        table: 'x_kpm95_chatdemo_purchase_req'
+                        id: '6c5e31d98bb1466a9e9ef06d25bc24ba'
+                        deleted: true
                     }
                     prop_demo_approver: {
                         table: 'sys_properties'
                         id: '0aaada9756af4f4ab1f9032dc549596e'
                     }
+                    role_approver_approveruser: {
+                        table: 'sys_user_has_role'
+                        id: 'f1f74eff9e744a96a78590954212f71d'
+                    }
+                    role_approver_chatapprover: {
+                        table: 'sys_user_has_role'
+                        id: 'e7f8561b8c4d4ad29e5e7082b6014d6e'
+                    }
+                    role_approver_chatuser: {
+                        table: 'sys_user_has_role'
+                        id: '2479d905f9f143fd9ddd95524c73f3d7'
+                    }
+                    role_delegate_approveruser: {
+                        table: 'sys_user_has_role'
+                        id: '9d51ed4b4fa342e4a05b473f2372179e'
+                    }
+                    role_delegate_chatuser: {
+                        table: 'sys_user_has_role'
+                        id: '750868c205bf4ee6b3bdf40dfd1577af'
+                    }
+                    role_requester_chatuser: {
+                        table: 'sys_user_has_role'
+                        id: 'abfd34d4aeb4400e95a308625f9b02a2'
+                    }
                     si_chatdemo_setup: {
                         table: 'sys_script_include'
                         id: 'ddcfb22640c2454498ea1d0923fbcd1b'
+                    }
+                    trg_acq_created: {
+                        table: 'sys_hub_trigger_instance_v2'
+                        id: '3527964c754c4335bcddfdbe4832d907'
+                    }
+                    trg_chatdemo_setup: {
+                        table: 'sys_trigger'
+                        id: 'e58bfce1b01145adb769c8e26e6068df'
+                    }
+                    trg_hcx_created: {
+                        table: 'sys_hub_trigger_instance_v2'
+                        id: 'a08dc99a65174af8998837fdf211d0bf'
+                    }
+                    usr_chatdemo_approver: {
+                        table: 'sys_user'
+                        id: '8bb796b6cf7549119500d6e448d25b10'
+                    }
+                    usr_chatdemo_delegate: {
+                        table: 'sys_user'
+                        id: 'c99a945fd3ec4705a73711286566dd35'
+                    }
+                    usr_chatdemo_requester: {
+                        table: 'sys_user'
+                        id: '7a8a9f690f874c4b8d17eae1f06c2904'
                     }
                 }
                 composite: [
