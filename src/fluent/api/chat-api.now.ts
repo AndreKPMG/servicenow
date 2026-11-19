@@ -110,12 +110,34 @@ RestApi({
             version: 1,
             active: true,
             authentication: true,
-            consumes: 'application/json',
-            produces: 'application/json',
+            consumes: 'application/json,application/xml,text/xml',
+            produces: 'application/json,application/xml,text/xml',
             shortDescription:
                 'Approva o rifiuta. Body: decision approved o rejected, comment obbligatorio sul rifiuto. Stato e commento scritti insieme, poi rilettura.',
             requestExample: '{"decision":"approved","comment":"Verificato budget"}',
             script: Now.include('./routes/approvals-decision.js'),
+        },
+        // Stessa logica, ma con l'id nel BODY invece che nel percorso.
+        // Serve perche' MCP Server Console non elenca la POST con il parametro
+        // nel percorso, mentre elenca le GET e le POST senza parametri di path
+        // (confrontata con /api/sn_sow_slo/v1/reliability_metrics/service_level_objective,
+        // che infatti non ha parametri nel percorso).
+        // consumes e produces sono larghi come quelli della route SLO che funziona.
+        {
+            $id: Now.ID['route_approvals_decision_body'],
+            name: 'Approval decision by body',
+            method: 'POST',
+            path: '/approvals/decision',
+            version: 1,
+            active: true,
+            authentication: true,
+            consumes: 'application/json,application/xml,text/xml',
+            produces: 'application/json,application/xml,text/xml',
+            shortDescription:
+                'Approva o rifiuta. Body: approval_sys_id, decision approved o rejected, comment obbligatorio sul rifiuto. Stessi controlli della route con id nel percorso.',
+            requestExample:
+                '{"approval_sys_id":"<sys_id dell approvazione>","decision":"approved","comment":"Verificato budget"}',
+            script: Now.include('./routes/approvals-decision-body.js'),
         },
     ],
 })

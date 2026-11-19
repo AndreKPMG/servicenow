@@ -171,7 +171,7 @@ ChatDemoRunner.prototype = {
     //      e quindi visibili a chatdemo.delegate tramite delega. Fuori dai 10.
     //   3. storico chiuso, scritto con setWorkflow(false): nessun flow, nessuna
     //      approvazione, serve solo ai KPI.
-    seed: function () {
+    seed: function (forza) {
         var out = {
             method: 'seed',
             attesa: { acquisti: 0, hcx: 0 },
@@ -181,6 +181,22 @@ ChatDemoRunner.prototype = {
             warnings: [],
         }
         try {
+            // Idempotenza: seed() non deve mai raddoppiare i dati. Se c'e' gia'
+            // qualcosa di CHATDEMO si ferma e chiede un reset(true).
+            // seed(true) forza comunque, per i casi in cui serve aggiungere.
+            var esistenti = {
+                acquisti: this._count(this.T_ACQ, ''),
+                hcx: this._count(this.T_HCX, ''),
+                incident: this._count('incident', 'correlation_idSTARTSWITH' + this.TAG),
+            }
+            if (!forza && (esistenti.acquisti || esistenti.hcx || esistenti.incident)) {
+                out.esito = 'GIA POPOLATO'
+                out.esistenti = esistenti
+                out.cosa_fare = 'Lanciare reset(true) e poi seed(). Per aggiungere comunque: seed(true).'
+                return this._ok(out)
+            }
+            out.esistenti_prima = esistenti
+
             var caller = this._userId('chatdemo.requester', out)
             var groups = this._groupIds(out)
             var i, res
@@ -812,7 +828,7 @@ ChatDemoRunner.prototype = {
                 trigger: triggers.length,
                 dettaglio: triggers,
                 pronto:
-                    gr.getValue('active') === 'true' &&
+                    (gr.getValue('active') === '1' || gr.getValue('active') === 'true') &&
                     gr.getValue('status') === 'published' &&
                     latest !== '' &&
                     latest === master &&
@@ -900,12 +916,14 @@ ChatDemoRunner.prototype = {
         // --- storico chiuso: picco due mesi fa, calo, risalita
         var defs = this._slaDefs(out)
         res.definizioni_sla = defs.length
+        // sforati scelti per avere ~45% nel mese di picco (2 mesi fa) e 20-30%
+        // negli altri, come chiesto per la demo.
         var piano = [
-            { mesiFa: 5, n: 18, sforati: 3 },
-            { mesiFa: 4, n: 21, sforati: 4 },
+            { mesiFa: 5, n: 18, sforati: 5 },
+            { mesiFa: 4, n: 21, sforati: 5 },
             { mesiFa: 3, n: 26, sforati: 7 },
-            { mesiFa: 2, n: 38, sforati: 14 },
-            { mesiFa: 1, n: 20, sforati: 3 },
+            { mesiFa: 2, n: 38, sforati: 17 },
+            { mesiFa: 1, n: 20, sforati: 4 },
         ]
         for (p = 0; p < piano.length; p++) {
             for (i = 0; i < piano[p].n; i++) {

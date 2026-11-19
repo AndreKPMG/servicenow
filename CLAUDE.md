@@ -420,3 +420,45 @@ Ristrutturato: l'impersonation la fa lo **script Global**, che chiama `runTest(i
 Il messaggio `Source descriptor is empty ... RCA policy is set to 'Tracking'` è atteso e innocuo:
 `ChatDemoRunner` è `accessibleFrom: 'public'` con `callerAccess: 'tracking'`, quindi la chiamata
 cross-scope è permessa e solo registrata. Con policy `Restricted` servirebbe un record RCA.
+
+## Problemi dal connettore MCP (19/11/2026) - diagnosi e correzioni
+
+### 1. `list_my_approvals` restituisce 0: l'utente del connettore non è ccandre
+Le approvazioni `requested` esistono e sono **14**: 10 a `ccandre` (= `demo_approver`,
+`f45c6290c39bc7507bd96e35990131e2`) e 4 a `chatdemo.approver` (i record `CHATDEMO_TEST`). Tutto corretto.
+I token OAuth recenti su `oauth_credential` sono però di **`CDARRIGO@KPMG.IT`** e **`afabbian`**, non di
+ccandre: l'API funziona, restituisce le approvazioni di *chi chiama*, e chi chiama non ne ha nessuna.
+Correzione: puntare `x_kpm95_chatdemo.demo_approver` sull'utenza autorizzata in Claude e ri-seminare.
+
+### 2. SLA sempre a 0 breach e 0 in corso: `getValue()` sui booleani
+`getValue()` su un campo booleano restituisce **`'1'` o `'0'`**, non `'true'`. Il confronto
+`=== 'true'` faceva leggere ogni booleano come falso. Dati verificati sull'istanza: i `task_sla`
+CHATDEMO con `has_breached` vero e quelli `in_progress`/attivi **esistono**, ma l'API li contava come zero.
+Lo stesso errore era in `skillContext`, dove teneva sempre accesi `QUOTE_MISSING`, `CV_MISSING` e
+`CONTRACT_MISSING`: alert sbagliati su ogni riepilogo.
+Corretto con un helper `_bool(gr, campo)` che accetta `'1'` e `'true'`, usato in `slaPerformance` e
+`skillContext`. Quote di breach riviste: ~45% nel mese di picco (2 mesi fa) e 20-30% negli altri
+(`sforati` 5/18, 5/21, 7/26, 17/38, 4/20).
+
+### 3. Volumi doppi: `seed()` eseguito due volte
+Confermato dai totali SLA (esattamente il doppio del piano) e dai 46 incident aperti invece di 18.
+`seed()` ora è **idempotente**: se trova già record CHATDEMO si ferma con `esito: 'GIA POPOLATO'` e
+chiede un `reset(true)`. `seed(true)` forza, per i casi in cui serve davvero aggiungere.
+
+### 4. POST `/approvals/{sys_id}/decision` non elencata in MCP Server Console
+Confronto in sola lettura con la route POST che funziona
+(`/api/sn_sow_slo/v1/reliability_metrics/service_level_objective`). Differenze trovate:
+- **la route SLO non ha parametri nel percorso**, la nostra sì (`{sys_id}`);
+- `consumes`/`produces`: SLO `application/json,application/xml,text/xml`, la nostra solo `application/json`;
+- `enforce_acl`: vuoto sulla SLO, valorizzato sulla nostra.
+Tutto il resto (metodo, `active`, `requires_authentication`, `requires_acl_authorization`) è identico.
+Non ho cercato gli script della console: il parametro nel percorso è la differenza che spiega il sintomo
+e la route alternativa è comunque la soluzione robusta.
+
+Fluent **non espone** un campo per la Request Schema OpenAPI (`RestApi` ha solo `requestExample`), quindi
+quello schema non è consegnabile dal sorgente con questa versione dell'SDK: ecco perché aggiungerlo a mano
+non sopravvive e perché la correzione (a) non è la strada.
+
+Correzione applicata: nuova route **POST `/approvals/decision`** con `approval_sys_id` nel **body**,
+stessa logica e stessi controlli (chiama lo stesso `ChatDemoApi.decide()`), `consumes`/`produces` larghi
+come la route SLO. La route con l'id nel percorso resta, per non rompere nulla.

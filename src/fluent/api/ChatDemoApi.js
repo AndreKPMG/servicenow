@@ -120,8 +120,8 @@ ChatDemoApi.prototype = {
             var mese = (gr.getValue('start_time') || '').substring(0, 7)
             if (!serie[mese]) continue
             serie[mese].totale++
-            if (gr.getValue('has_breached') === 'true') serie[mese].breached++
-            if (gr.getValue('active') === 'true') serie[mese].in_corso++
+            if (this._bool(gr, 'has_breached')) serie[mese].breached++
+            if (this._bool(gr, 'active')) serie[mese].in_corso++
         }
 
         var perMese = []
@@ -293,7 +293,7 @@ ChatDemoApi.prototype = {
     _contestoAcquisti: function (rec) {
         var importo = parseFloat(rec.getValue('amount') || '0')
         var budget = parseFloat(rec.getValue('budget_residual') || '0')
-        var preventivo = rec.getValue('quote_attached') === 'true'
+        var preventivo = this._bool(rec, 'quote_attached')
         var alert = []
         if (importo > budget) alert.push('BUDGET_EXCEEDED')
         if (!preventivo) alert.push('QUOTE_MISSING')
@@ -324,8 +324,8 @@ ChatDemoApi.prototype = {
     _contestoHcx: function (rec) {
         var compenso = parseFloat(rec.getValue('proposed_fee') || '0')
         var fmv = parseFloat(rec.getValue('fmv_max') || '0')
-        var cv = rec.getValue('cv_received') === 'true'
-        var contratto = rec.getValue('contract_signed') === 'true'
+        var cv = this._bool(rec, 'cv_received')
+        var contratto = this._bool(rec, 'contract_signed')
         var alert = []
         if (compenso > fmv) alert.push('FEE_OVER_FMV')
         if (!cv) alert.push('CV_MISSING')
@@ -361,6 +361,16 @@ ChatDemoApi.prototype = {
     },
 
     // ----------------------------------------------------------- interni
+
+    // getValue() su un campo booleano restituisce '1' o '0', NON 'true'.
+    // Confrontare con 'true' fa leggere ogni booleano come falso: era la causa
+    // di breach e in_corso sempre a zero e degli alert QUOTE_MISSING,
+    // CV_MISSING e CONTRACT_MISSING sempre accesi.
+    _bool: function (gr, campo) {
+        var v = gr.getValue(campo)
+        return v === '1' || v === 'true' || v === true
+    },
+
 
     _months: function (months) {
         var m = parseInt(months, 10)

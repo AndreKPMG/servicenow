@@ -410,6 +410,10 @@ declare global {
                         table: 'sys_ws_operation'
                         id: '42fac013c1e44c818627383ecd26478c'
                     }
+                    route_approvals_decision_body: {
+                        table: 'sys_ws_operation'
+                        id: 'fabf12061108460fb80e540d9380ced6'
+                    }
                     route_approvals_mine: {
                         table: 'sys_ws_operation'
                         id: '28397535fc9c4538a7ed42daa8c7f4b6'
