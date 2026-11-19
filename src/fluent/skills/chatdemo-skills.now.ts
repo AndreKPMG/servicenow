@@ -72,7 +72,7 @@ NowAssistSkillConfig(
                 $id: Now.ID['tool_acq_contesto'],
                 $capabilityId: Now.ID['cap_acq_contesto'],
                 scriptId: '6569cd498a9e410a88c4b685f60cb10c',
-                scriptFunctionName: 'contesto',
+                scriptFunctionName: 'ChatDemoApprovalTool',
                 inputs: [
                     {
                         $id: Now.ID['tool_acq_in_id'],
@@ -162,7 +162,7 @@ NowAssistSkillConfig(
                 $id: Now.ID['tool_hcx_contesto'],
                 $capabilityId: Now.ID['cap_hcx_contesto'],
                 scriptId: '6569cd498a9e410a88c4b685f60cb10c',
-                scriptFunctionName: 'contesto',
+                scriptFunctionName: 'ChatDemoApprovalTool',
                 inputs: [
                     {
                         $id: Now.ID['tool_hcx_in_id'],
@@ -254,7 +254,7 @@ NowAssistSkillConfig(
                 $id: Now.ID['tool_itsm_aggregati'],
                 $capabilityId: Now.ID['cap_itsm_aggregati'],
                 scriptId: '72cd1abe4fd74e83870009b4912cb32f',
-                scriptFunctionName: 'aggregati',
+                scriptFunctionName: 'ChatDemoTicketTool',
                 inputs: [
                     {
                         $id: Now.ID['tool_itsm_in_mesi'],
