@@ -602,3 +602,19 @@ In coda a ogni prompt la piattaforma aggiunge:
 `Generate the response in language English. Do not return any translation. You are allowed to respond only in English.`
 Questo sovrascrive il nostro "Rispondi in italiano" ed è il motivo delle risposte in inglese.
 Si governa in AI Admin Hub → Settings → Multilingual service.
+
+### I tool script vanno scritti come classe, non come funzione
+Aggiunto il tool a mano in Skill Kit, l'output **entra** nel prompt (il segnaposto `{{AggregatiTicket.output}}`
+funziona), ma lo script andava in errore: `ConversionError: The undefined value has no properties`.
+
+Dal prompt reale si legge il wrapper generato da Now Assist:
+`ChatDemoTicketTool; var I = (function(c,a){ function F(){ return c.apply(this,a); } ... }); ... ChatDemoTicketTool.apply(I, f);`
+cioè lo Script Include viene **istanziato come classe** e poi se ne invoca un metodo. I due tool erano
+scritti in forma a funzione, quindi il riferimento restava undefined.
+
+Riscritti come `Class.create()` con un metodo: `ChatDemoApprovalTool.contesto(approvalId)` e
+`ChatDemoTicketTool.aggregati(mesi)`, aggiornato di conseguenza `scriptFunctionName` nel sorgente.
+
+**Scorciatoia senza install**: puntare il tool direttamente a **`ChatDemoApi`**, che è già in forma
+`Class.create()` ed è già sull'istanza, scegliendo il metodo `skillTicketAggregates` (ITSM) o
+`skillContext` (acquisti e HCx). Stessa logica, stessi controlli, nessun install.
