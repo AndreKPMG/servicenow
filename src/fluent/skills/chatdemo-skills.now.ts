@@ -1,7 +1,14 @@
 import { NowAssistSkillConfig, ScriptInclude } from '@servicenow/sdk/core'
 
-// Fase 5 - Le tre skill Now Assist, lasciate IN BOZZA: la pubblicazione si fa
-// dalla UI (Now Assist Skill Kit), come richiesto.
+// Fase 5 - Le tre skill Now Assist.
+// I prompt sono 'published', NON 'draft': con promptState 'draft' la skill si
+// attiva regolarmente ma l'esecuzione fallisce subito con
+//   "Active prompt configuration not found for given definitionId ..."
+// e il connettore vede un 500 "Execution failed". Verificato sull'istanza.
+// Il builder non accetta un prompt 'published' su una skill che non lo e',
+// quindi anche la skill porta state: 'published'. La guida dell'SDK consiglia
+// di pubblicare dalla UI, ma cosi' un install non riporterebbe le skill in
+// bozza lasciandole di nuovo senza prompt attivo.
 // Ogni skill chiama prima un tool di script che fa i controlli di permesso e i
 // calcoli, poi passa al modello solo il JSON risultante. Il modello non legge
 // tabelle e non fa conti.
@@ -37,6 +44,7 @@ NowAssistSkillConfig(
         $id: Now.ID['skill_riepilogo_acquisti'],
         name: 'Riepilogo approvazione acquisti',
         shortDescription: 'Riepiloga una richiesta di acquisto da approvare.',
+        state: 'published',
         description:
             'Prepara la decisione su una richiesta di acquisto CHATDEMO: importo, budget residuo, preventivo e criticita. I controlli di permesso e i calcoli sono fatti dal tool, non dal modello.',
         inputs: [
@@ -83,7 +91,7 @@ NowAssistSkillConfig(
                                 model: 'claude_large',
                                 temperature: 0.1,
                                 maxTokens: 1200,
-                                promptState: 'draft',
+                                promptState: 'published',
                                 prompt: (p) => `Sei l'assistente di un responsabile acquisti.
 Devi riepilogare una richiesta di acquisto perche' il responsabile possa decidere.
 
@@ -126,6 +134,7 @@ NowAssistSkillConfig(
         $id: Now.ID['skill_riepilogo_hcx'],
         name: 'Riepilogo approvazione HCx',
         shortDescription: 'Riepiloga un engagement HCx da verificare in compliance.',
+        state: 'published',
         description:
             'Prepara la verifica compliance su un engagement HCx CHATDEMO: compenso rispetto al fair market value, CV, contratto. I controlli di permesso e i calcoli sono fatti dal tool, non dal modello.',
         inputs: [
@@ -172,7 +181,7 @@ NowAssistSkillConfig(
                                 model: 'claude_large',
                                 temperature: 0.1,
                                 maxTokens: 1200,
-                                promptState: 'draft',
+                                promptState: 'published',
                                 prompt: (p) => `Sei l'assistente di un referente compliance che valuta gli engagement
 con operatori sanitari (HCP). Il tono e' prudente: il rischio reputazionale conta
 piu' della velocita'.
@@ -216,6 +225,7 @@ NowAssistSkillConfig(
         $id: Now.ID['skill_analisi_ticket'],
         name: 'Analisi ticket ITSM',
         shortDescription: 'Commenta il trend dei ticket CHATDEMO.',
+        state: 'published',
         description:
             'Legge gli aggregati mensili dei ticket CHATDEMO (aperti, chiusi, backlog) e ne commenta l andamento. Gli aggregati sono calcolati dalla piattaforma.',
         inputs: [
@@ -263,7 +273,7 @@ NowAssistSkillConfig(
                                 model: 'claude_large',
                                 temperature: 0.2,
                                 maxTokens: 1200,
-                                promptState: 'draft',
+                                promptState: 'published',
                                 prompt: (p) => `Sei l'assistente di un IT service manager.
 Commenti dati che ti vengono forniti gia' aggregati: non hai accesso ai singoli ticket.
 

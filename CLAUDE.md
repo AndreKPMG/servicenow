@@ -557,3 +557,25 @@ non è verificabile dalle tabelle che ho letto.
 
 Segnale da ricontrollare dopo l'intervento, in sola lettura: `sys_hub_flow` del provider scelto deve
 passare a `active = true`. Finché resta false, le skill continueranno a dare 500 "Execution failed".
+
+### CORREZIONE 2: il provider c'è, mancava il prompt attivo
+Due cose che avevo detto erano sbagliate e vanno ritrattate:
+1. «le skill non sono pubblicate» — erano attive, lo mostrava la console;
+2. «nessun provider LLM è cablato, servono credenziali AWS» — falso. In AI Admin Hub i provider sono
+   **ServiceNow managed** (Now LLM Service, AWS Claude, Azure OpenAI, Google Gemini): nessuna credenziale
+   AWS serve. I flow `Amazon Bedrock Chat Completions` e simili sono un percorso legacy inutilizzato:
+   altre definizioni AIA eseguono con successo nella stessa finestra temporale.
+
+Errore reale, da `sys_generative_ai_log` (`status = error`, `error_code = 100004`, 19 ms, nessun prompt
+inviato) e dalla riga `sn_generative_ai` in syslog:
+
+> Error occurred while executing capability : **Active prompt configuration not found** for given
+> definitionId `ade4cec39fcf469d93e1fcff9213ccac`
+
+Causa: i prompt erano stati consegnati con `promptState: 'draft'`. La skill si attiva, ma senza un prompt
+**attivo** l'esecuzione fallisce subito e il connettore vede 500 "Execution failed".
+
+Correzione nel sorgente: `promptState: 'published'` sulle tre skill. Il builder però rifiuta un prompt
+pubblicato su una skill non pubblicata (`TS210`), quindi serve anche `state: 'published'` sulla skill.
+La guida dell'SDK consiglia di pubblicare dalla UI, ma lasciando `draft` ogni install riporterebbe le
+skill senza prompt attivo, cioè di nuovo rotte.
