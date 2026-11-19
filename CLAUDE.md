@@ -579,3 +579,26 @@ Correzione nel sorgente: `promptState: 'published'` sulle tre skill. Il builder 
 pubblicato su una skill non pubblicata (`TS210`), quindi serve anche `state: 'published'` sulla skill.
 La guida dell'SDK consiglia di pubblicare dalla UI, ma lasciando `draft` ogni install riporterebbe le
 skill senza prompt attivo, cioè di nuovo rotte.
+
+### Il blocco `tools:` di NowAssistSkillConfig non viene emesso (SDK 4.14.2)
+Dopo la pubblicazione dei prompt le skill eseguono (niente più 500), ma rispondono a vuoto.
+Leggendo il prompt reale in `sys_generative_ai_log`:
+- gli **input si legano correttamente**: `Input ricevuto: 28765853...` e `Mesi richiesti: 6`. Il nome
+  `approval id` con lo spazio **non è un problema**: il tool MCP lo espone come `approval_id` e il valore arriva.
+- l'**output dei tool è vuoto** in tutti e tre i prompt.
+
+Causa: in `keys.ts` non esiste **nessuna** chiave `tool_*` o `cap_*`, mentre input, output standard e
+prompt ci sono tutti. Il builder scarta l'intero blocco `tools:` **in silenzio**, con build "completed
+successfully". Provato sia con `scriptId` come oggetto `ScriptInclude` sia come sys_id letterale:
+identico. Quindi non è nemmeno vero che gli Script Include `package_private` fossero il rischio: i tool
+non sono mai stati creati.
+
+Rimedio: aggiungere i due tool a mano in Now Assist Skill Kit, puntando a `ChatDemoApprovalTool`
+(`6569cd498a9e410a88c4b685f60cb10c`) e `ChatDemoTicketTool` (`72cd1abe4fd74e83870009b4912cb32f`), e
+referenziarne l'output nel prompt.
+
+### Altra scoperta: la lingua della risposta è forzata
+In coda a ogni prompt la piattaforma aggiunge:
+`Generate the response in language English. Do not return any translation. You are allowed to respond only in English.`
+Questo sovrascrive il nostro "Rispondi in italiano" ed è il motivo delle risposte in inglese.
+Si governa in AI Admin Hub → Settings → Multilingual service.

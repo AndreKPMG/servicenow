@@ -1,6 +1,17 @@
 import { NowAssistSkillConfig, ScriptInclude } from '@servicenow/sdk/core'
 
 // Fase 5 - Le tre skill Now Assist.
+//
+// ATTENZIONE - LIMITE DELL'SDK 4.14.2: il blocco `tools:` qui sotto **non viene
+// emesso**. La build riesce senza alcun errore, ma in keys.ts non compare
+// nessuna chiave dei tool e sull'istanza nessun record viene creato. Provato sia
+// con `scriptId` come oggetto ScriptInclude sia come sys_id letterale: identico.
+// Conseguenza: le skill arrivano al modello SENZA i dati, il segnaposto
+// dell'output del tool nel prompt resta vuoto e il modello risponde a vuoto o
+// inventa un errore. Verificato leggendo il prompt reale in sys_generative_ai_log.
+// Finche' l'SDK non lo supporta, i due tool vanno aggiunti A MANO in
+// Now Assist Skill Kit, puntando ai due Script Include qui sotto.
+// Il blocco resta nel sorgente come documentazione dell'intento.
 // I prompt sono 'published', NON 'draft': con promptState 'draft' la skill si
 // attiva regolarmente ma l'esecuzione fallisce subito con
 //   "Active prompt configuration not found for given definitionId ..."
@@ -16,7 +27,7 @@ import { NowAssistSkillConfig, ScriptInclude } from '@servicenow/sdk/core'
 // builder), quindi riepilogo_approvazione_acquisti diventa
 // 'Riepilogo approvazione acquisti' e cosi' le altre due.
 
-const approvalTool = ScriptInclude({
+ScriptInclude({
     $id: Now.ID['si_skill_approval_tool'],
     name: 'ChatDemoApprovalTool',
     description:
@@ -27,7 +38,7 @@ const approvalTool = ScriptInclude({
     clientCallable: false,
 })
 
-const ticketTool = ScriptInclude({
+ScriptInclude({
     $id: Now.ID['si_skill_ticket_tool'],
     name: 'ChatDemoTicketTool',
     description: 'Tool della skill di analisi ticket: restituisce i soli aggregati CHATDEMO.',
@@ -60,7 +71,7 @@ NowAssistSkillConfig(
             ContestoAcquisto: t.Script('ContestoAcquisto', {
                 $id: Now.ID['tool_acq_contesto'],
                 $capabilityId: Now.ID['cap_acq_contesto'],
-                scriptId: approvalTool,
+                scriptId: '6569cd498a9e410a88c4b685f60cb10c',
                 scriptFunctionName: 'ChatDemoApprovalTool',
                 inputs: [
                     {
@@ -150,7 +161,7 @@ NowAssistSkillConfig(
             ContestoEngagement: t.Script('ContestoEngagement', {
                 $id: Now.ID['tool_hcx_contesto'],
                 $capabilityId: Now.ID['cap_hcx_contesto'],
-                scriptId: approvalTool,
+                scriptId: '6569cd498a9e410a88c4b685f60cb10c',
                 scriptFunctionName: 'ChatDemoApprovalTool',
                 inputs: [
                     {
@@ -242,7 +253,7 @@ NowAssistSkillConfig(
             AggregatiTicket: t.Script('AggregatiTicket', {
                 $id: Now.ID['tool_itsm_aggregati'],
                 $capabilityId: Now.ID['cap_itsm_aggregati'],
-                scriptId: ticketTool,
+                scriptId: '72cd1abe4fd74e83870009b4912cb32f',
                 scriptFunctionName: 'ChatDemoTicketTool',
                 inputs: [
                     {
