@@ -486,3 +486,13 @@ Dati: 10 acquisti e 10 HCx (5+5 in attesa, 2+2 test, 3+3 storico), 141 incident 
 mentre i flow hanno creato regolarmente 14 contesti e 14 approvazioni. Né `published_version` né il confronto
 fra `latest_snapshot` e `master_snapshot` dicono se un flow parte. L'unica prova è `per_record`: contesto e
 approvazione creati. `checkFlows()` andrebbe ridotto a riportare i campi senza esprimere un giudizio.
+
+### Ritocchi estetici sui dati demo (19/11/2026)
+- Titoli senza il prefisso `CHATDEMO - `: il tag resta solo in `correlation_id`, che è ciò su cui filtrano
+  API, SLA e `reset()`. Nessun filtro dipendeva dal titolo.
+- Cinque richiedenti fittizi, tutti con email `@example.com`: `chatdemo.gmoretti`, `chatdemo.pferrari`,
+  `chatdemo.scolombo`, `chatdemo.mricci`, `chatdemo.ebianchi`. `seed()` li assegna a rotazione e, se non
+  li trova, ripiega su `chatdemo.requester` segnalandolo nei warning. Li crea lo script Global, non `seed()`.
+- Le 10 richieste in attesa hanno una data di apertura diversa, una per ciascuno degli ultimi 10 giorni.
+- `checkFlows()` non dà più verdetti: riporta `active`, `status`, `latest_snapshot`, `master_snapshot` e i
+  trigger, e basta. I campi `agganciato`, `snapshot_allineato` e `pronto` erano tutti criteri sbagliati.

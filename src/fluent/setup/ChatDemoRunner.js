@@ -197,11 +197,24 @@ ChatDemoRunner.prototype = {
             }
             out.esistenti_prima = esistenti
 
-            var caller = this._userId('chatdemo.requester', out)
+            var richiedenti = this._richiedenti(out)
+            var turno = 0
+            var caller = function () { return richiedenti[turno++ % richiedenti.length] }
             var groups = this._groupIds(out)
             var i, res
 
             // ---------------------------------------- 1) cinque acquisti in attesa
+            // Le 10 richieste in attesa prendono una data di apertura diversa,
+            // una per ciascuno degli ultimi 10 giorni.
+            var giorno = 0
+            var apertura = function () {
+                var d = new GlideDateTime()
+                d.addDaysLocalTime(-giorno)
+                d.addSeconds(-(3600 * (2 + (giorno % 6))))
+                giorno++
+                return d.getValue()
+            }
+
             var acqAttesa = [
                 { s: 'Rinnovo licenze CRM', supplier: 'Nordwind Software', category: 'software', amount: 6400, budget_residual: 15000, quote_attached: true, caso: 'regolare' },
                 { s: 'Server di collaudo', supplier: 'Baltic Hardware', category: 'hardware', amount: 9200, budget_residual: 4000, quote_attached: true, caso: 'BUDGET_EXCEEDED' },
@@ -210,7 +223,9 @@ ChatDemoRunner.prototype = {
                 { s: 'Campagna employer branding', supplier: 'Mediana Comm', category: 'marketing', amount: 5200, budget_residual: 12000, quote_attached: true, caso: 'regolare' },
             ]
             for (i = 0; i < acqAttesa.length; i++) {
-                res = this._createAcq(this._acqVals(acqAttesa[i], i), this.TAG, caller, out, false)
+                var vaAttesa = this._acqVals(acqAttesa[i], i)
+                vaAttesa.opened_at = apertura()
+                res = this._createAcq(vaAttesa, this.TAG, caller(), out, false)
                 if (res) out.attesa.acquisti++
             }
 
@@ -223,7 +238,9 @@ ChatDemoRunner.prototype = {
                 { s: 'Advisory board medicina generale', hcp: 'Dott. Paolo Esempio', sp: 'general', ev: 'advisory_board', fee: 1500, fmv: 2200, cv: true, ct: true, caso: 'regolare' },
             ]
             for (i = 0; i < hcxAttesa.length; i++) {
-                res = this._createHcx(this._hcxVals(hcxAttesa[i]), this.TAG, caller, out, false)
+                var vhAttesa = this._hcxVals(hcxAttesa[i])
+                vhAttesa.opened_at = apertura()
+                res = this._createHcx(vhAttesa, this.TAG, caller(), out, false)
                 if (res) out.attesa.hcx++
             }
 
@@ -233,7 +250,7 @@ ChatDemoRunner.prototype = {
                 { s: 'TEST secondo livello', supplier: 'Delta Consulting', category: 'consulting', amount: 18500, budget_residual: 40000, quote_attached: true, caso: 'test oltre 10.000' },
             ]
             for (i = 0; i < acqTest.length; i++) {
-                res = this._createAcq(this._acqVals(acqTest[i], i), this.TAG_TEST, caller, out, false)
+                res = this._createAcq(this._acqVals(acqTest[i], i), this.TAG_TEST, caller(), out, false)
                 if (res) out.test.acquisti++
             }
 
@@ -242,7 +259,7 @@ ChatDemoRunner.prototype = {
                 { s: 'TEST compenso sopra FMV', hcp: 'Dott.ssa Test Due', sp: 'oncology', ev: 'speaker', fee: 3900, fmv: 2600, cv: true, ct: false, caso: 'test con alert' },
             ]
             for (i = 0; i < hcxTest.length; i++) {
-                res = this._createHcx(this._hcxVals(hcxTest[i]), this.TAG_TEST, caller, out, false)
+                res = this._createHcx(this._hcxVals(hcxTest[i]), this.TAG_TEST, caller(), out, false)
                 if (res) out.test.hcx++
             }
 
@@ -256,7 +273,7 @@ ChatDemoRunner.prototype = {
                 var va = this._acqVals(acqStorico[i], i)
                 va.state = 3
                 va.opened_at = this._mesiFa(acqStorico[i].mesiFa)
-                res = this._createAcq(va, this.TAG, caller, out, true)
+                res = this._createAcq(va, this.TAG, caller(), out, true)
                 if (res) out.storico.acquisti++
             }
 
@@ -270,12 +287,12 @@ ChatDemoRunner.prototype = {
                 vh.state = 3
                 vh.compliance_check = 'passed'
                 vh.opened_at = this._mesiFa(hcxStorico[i].mesiFa)
-                res = this._createHcx(vh, this.TAG, caller, out, true)
+                res = this._createHcx(vh, this.TAG, caller(), out, true)
                 if (res) out.storico.hcx++
             }
 
             // ------------------------------------------------------- 5) incident
-            out.incident = this._seedIncidents(groups, caller, out)
+            out.incident = this._seedIncidents(groups, caller(), out)
 
             // Delega per il test 2: chatdemo.approver delega chatdemo.delegate.
             out.delega = this._ensureDelegate(out)
@@ -288,9 +305,27 @@ ChatDemoRunner.prototype = {
         }
     },
 
+    // Richiedenti fittizi della demo, tutti con email @example.com.
+    // Se non esistono si ripiega su chatdemo.requester.
+    RICHIEDENTI: ['chatdemo.gmoretti', 'chatdemo.pferrari', 'chatdemo.scolombo', 'chatdemo.mricci', 'chatdemo.ebianchi'],
+
+    _richiedenti: function (out) {
+        var ids = []
+        for (var i = 0; i < this.RICHIEDENTI.length; i++) {
+            var gr = new GlideRecord('sys_user')
+            if (gr.get('user_name', this.RICHIEDENTI[i])) ids.push(gr.getUniqueValue())
+        }
+        if (!ids.length) {
+            var fallback = this._userId('chatdemo.requester', out)
+            if (fallback) ids.push(fallback)
+            out.warnings.push('richiedenti fittizi assenti: usato chatdemo.requester')
+        }
+        return ids
+    },
+
     _acqVals: function (r, i) {
         return {
-            short_description: 'CHATDEMO - ' + r.s,
+            short_description: r.s,
             supplier: r.supplier,
             category: r.category,
             amount: r.amount,
@@ -305,7 +340,7 @@ ChatDemoRunner.prototype = {
         var d = new GlideDateTime()
         d.addDaysLocalTime(30)
         return {
-            short_description: 'CHATDEMO - ' + r.s,
+            short_description: r.s,
             hcp_name: r.hcp,
             specialty: r.sp,
             event_type: r.ev,
@@ -794,10 +829,11 @@ ChatDemoRunner.prototype = {
         }
     },
 
-    // Verifica che i flow siano attivi, pubblicati e con un solo trigger.
-    // NON si giudica da published_version sul trigger: sull'istanza quel campo
-    // resta vuoto anche con i flow che partono regolarmente. Il segnale buono e'
-    // status = published con latest_snapshot uguale a master_snapshot.
+    // Riporta soltanto i campi dei flow e dei loro trigger, senza dare un
+    // verdetto. Ne published_version sul trigger ne il confronto fra
+    // latest_snapshot e master_snapshot dicono se un flow parte: verificato sul
+    // campo, con entrambi "sbagliati" mentre i flow creavano regolarmente
+    // contesti e approvazioni. L'unica prova e' per_record in pilotReport().
     checkFlows: function () {
         var res = []
         var gr = new GlideRecord('sys_hub_flow')
@@ -806,8 +842,6 @@ ChatDemoRunner.prototype = {
         gr.query()
         while (gr.next()) {
             var flowId = gr.getUniqueValue()
-            var latest = gr.getValue('latest_snapshot') || ''
-            var master = gr.getValue('master_snapshot') || ''
             var triggers = []
             var tr = new GlideRecord('sys_hub_trigger_instance_v2')
             tr.addQuery('flow', flowId)
@@ -824,23 +858,15 @@ ChatDemoRunner.prototype = {
                 flow: gr.getValue('name'),
                 active: gr.getValue('active'),
                 status: gr.getValue('status'),
-                snapshot_allineato: latest !== '' && latest === master,
+                latest_snapshot: gr.getValue('latest_snapshot') || '(vuoto)',
+                master_snapshot: gr.getValue('master_snapshot') || '(vuoto)',
                 trigger: triggers.length,
                 dettaglio: triggers,
-                pronto:
-                    (gr.getValue('active') === '1' || gr.getValue('active') === 'true') &&
-                    gr.getValue('status') === 'published' &&
-                    latest !== '' &&
-                    latest === master &&
-                    triggers.length === 1,
-                nota: 'published_version vuoto sul trigger non e un problema: non e il campo che dice se il flow parte.',
             })
         }
         return res
     },
 
-    // silenzioso = true: setWorkflow(false), quindi nessun flow e nessuna
-    // approvazione. Si usa solo per lo storico che alimenta i KPI.
     _createAcq: function (vals, tag, caller, out, silenzioso) {
         try {
             var gr = new GlideRecord(this.T_ACQ)
