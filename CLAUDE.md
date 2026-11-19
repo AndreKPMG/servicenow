@@ -496,3 +496,33 @@ approvazione creati. `checkFlows()` andrebbe ridotto a riportare i campi senza e
 - Le 10 richieste in attesa hanno una data di apertura diversa, una per ciascuno degli ultimi 10 giorni.
 - `checkFlows()` non dà più verdetti: riporta `active`, `status`, `latest_snapshot`, `master_snapshot` e i
   trigger, e basta. I campi `agganciato`, `snapshot_allineato` e `pronto` erano tutti criteri sbagliati.
+
+## Prova dal connettore delle 11:10 (19/11/2026) - tre esiti
+
+### 1. Skill: 500 "Execution failed" - **non sono mai state pubblicate**
+`sn_nowassist_skill_config` per le tre skill: `state = 0` e **`active = false`**. Sono ancora in bozza,
+come le aveva lasciate l'install. Nessuna transazione di esecuzione skill nella finestra 10:07-10:16
+(ora istanza, un'ora indietro rispetto all'orologio di Andrea): la chiamata non arriva nemmeno al motore.
+Gli errori `setEnforceFieldACL ... GlideRecordSecure` visti alle 10:05 sono di un AI Agent preesistente
+(`sn_aia_tool`), non delle nostre skill.
+
+Due rischi restano **non verificabili finché non sono pubblicate**, e vanno controllati alla prima prova:
+- l'input si chiama `approval id`, **con lo spazio** (il builder vieta gli underscore): va verificato che
+  il tool MCP passi esattamente quel nome;
+- i due Script Include dei tool sono `package_private`: se l'esecutore delle skill gira in uno scope
+  diverso da quello dell'app, non li vede e servirà `public`.
+
+### 2. `get_ticket_trend`: 403 alla prima chiamata, poi ok - **non identificato**
+Le due chiamate sono 10:10:24 (`group_by=priority`) e 10:10:31 (`group_by=assignment_group`), stesso
+utente `afabbian`, che ha il ruolo `x_kpm95_chatdemo.user` dalle 09:35:09 ed è admin; chiamate riuscite
+alle 09:27 e 09:56. Quindi **non è il ruolo**. ServiceNow non registra i dinieghi ACL REST, e in syslog
+nella finestra non c'è alcuna riga di diniego: il controllo fallito non è ricostruibile dai log.
+Resta la differenza nota: la nostra operation ha `enforce_acl` valorizzato, quella SLO di confronto no.
+Per distinguere fra ACL di piattaforma e il nostro guard serve il **corpo della risposta**: se diceva
+`ROLE_REQUIRED` è il guard della route, altrimenti è l'ACL della operation.
+
+### 3. `get_sla_performance` ignorava `group_by` - corretto
+`slaPerformance` calcolava `campo` con `_groupField()` e poi **non lo usava mai**: restituiva solo il
+totale per mese. Ora ogni mese ha `per: { <valore>: { totale, breached, in_corso, percentuale_rispetto } }`.
+Il valore si ricava da una mappa `task -> campo` costruita con una sola lettura degli incident CHATDEMO,
+senza dot-walk e senza una lettura per riga.

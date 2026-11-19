@@ -106,8 +106,23 @@ ChatDemoApi.prototype = {
                 breached: 0,
                 in_corso: 0,
                 percentuale_rispetto: null,
+                per: {},
                 mese_concluso: finestra.chiavi[k] !== finestra.meseCorrente,
             }
+        }
+
+        // group_by veniva calcolato e poi ignorato: la risposta aveva solo il
+        // totale. Qui si costruisce prima una mappa task -> valore del campo,
+        // con una sola lettura degli incident CHATDEMO, e poi la si usa nel
+        // ciclo sui task_sla: niente dot-walk e niente letture per riga.
+        var valorePerTask = {}
+        var inc = new GlideRecord('incident')
+        inc.addEncodedQuery('correlation_idSTARTSWITH' + this.TAG)
+        inc.setLimit(5000)
+        inc.query()
+        while (inc.next()) {
+            var v = inc.getDisplayValue(campo)
+            valorePerTask[inc.getUniqueValue()] = v || '(non impostato)'
         }
 
         var gr = new GlideRecord('task_sla')
@@ -120,8 +135,19 @@ ChatDemoApi.prototype = {
             var mese = (gr.getValue('start_time') || '').substring(0, 7)
             if (!serie[mese]) continue
             serie[mese].totale++
-            if (this._bool(gr, 'has_breached')) serie[mese].breached++
-            if (this._bool(gr, 'active')) serie[mese].in_corso++
+            var sforato = this._bool(gr, 'has_breached')
+            var attivo = this._bool(gr, 'active')
+            if (sforato) serie[mese].breached++
+            if (attivo) serie[mese].in_corso++
+
+            var gruppo = valorePerTask[gr.getValue('task')] || '(fuori perimetro)'
+            if (!serie[mese].per[gruppo]) {
+                serie[mese].per[gruppo] = { totale: 0, breached: 0, in_corso: 0, percentuale_rispetto: null }
+            }
+            var riga = serie[mese].per[gruppo]
+            riga.totale++
+            if (sforato) riga.breached++
+            if (attivo) riga.in_corso++
         }
 
         var perMese = []
@@ -129,6 +155,12 @@ ChatDemoApi.prototype = {
             var riga = serie[finestra.chiavi[k]]
             if (riga.totale > 0) {
                 riga.percentuale_rispetto = Math.round(((riga.totale - riga.breached) / riga.totale) * 1000) / 10
+            }
+            for (var g in riga.per) {
+                var rg = riga.per[g]
+                if (rg.totale > 0) {
+                    rg.percentuale_rispetto = Math.round(((rg.totale - rg.breached) / rg.totale) * 1000) / 10
+                }
             }
             perMese.push(riga)
         }
