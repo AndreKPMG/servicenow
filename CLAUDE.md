@@ -634,3 +634,20 @@ Verifica in sola lettura dopo l'install, tutto **sopravvissuto**:
 Prova end-to-end dal connettore: `analisi_ticket_itsm` risponde con i dati reali (141 aperti, 123 chiusi,
 picco 38 a settembre, backlog 18 con la ripartizione per gruppo) e `get_sla_performance` con `group_by`
 restituisce la ripartizione per priorità in ogni mese.
+
+### Prova finale dal connettore e due correzioni di prompt
+`riepilogo_approvazione_acquisti` funziona: ACQ0001027, Paolo Ferrari, 9.200 EUR contro 4.000 di budget,
+alert BUDGET_EXCEEDED riportato correttamente, nessuna decisione presa, risposta in italiano.
+
+`riepilogo_approvazione_hcx` dava «non disponibile per questo utente», ma **non era un problema di
+configurazione**: nel prompt registrato il JSON del tool c'era, giusto e completo
+(`HCX0001025`, `alert: ["FEE_OVER_FMV"]`, CV e contratto a true). A ingannare il modello era la riga di
+chiusura `Input ricevuto: <sys_id>`, che scambiava per il dato da cercare, applicando la regola
+sull'errore. Rimossa da entrambe le skill di riepilogo, e la regola sull'errore ora scatta **solo** se il
+JSON ha davvero la chiave `errore`.
+
+### Il 403 intermittente: identificato
+Corpo della risposta: `403 {"error":{"message":"User Not Authorized","detail":"Failed API level ACL Validation"}}`.
+Quindi **non** è il guard `ROLE_REQUIRED` della route, ma l'**ACL a livello di API** della operation REST
+(campo `enforce_acl`, valorizzato sulle nostre e vuoto sulla route SLO di confronto). Si ripresenta sulla
+prima chiamata e passa al secondo tentativo.

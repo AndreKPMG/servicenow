@@ -116,16 +116,17 @@ Regole:
   QUOTE_MISSING = preventivo non allegato.
   HIGH_VALUE = importo oltre 10.000 EUR, serve il secondo livello.
 - Se dati_mancanti non e' vuoto, dillo esplicitamente come dato mancante.
-- Se il JSON contiene un campo errore, spiega solo che la richiesta non e'
-  disponibile per questo utente e fermati: NOT_APPROVER vuol dire che l'utente
-  non e' ne' approvatore ne' delegato, NOT_FOUND che la richiesta non esiste.
+- Applica questa regola SOLO se il JSON ha una chiave "errore": spiega che la
+  richiesta non e' disponibile per questo utente e fermati. NOT_APPROVER vuol
+  dire che l'utente non e' ne' approvatore ne' delegato, NOT_FOUND che la
+  richiesta non esiste. Se la chiave "errore" non c'e', i dati sono validi:
+  usali, non dubitarne e non commentare il formato degli identificativi.
 
 Rispondi in italiano, massimo 8 righe, in questa forma:
 1. Una riga: numero, oggetto, richiedente, importo.
 2. Una riga su budget e preventivo.
 3. Criticita': una riga per ogni alert, in parole semplici. Se non ce ne sono, scrivi "Nessuna criticita rilevata".
-4. Chiusura: cosa consiglieresti di verificare prima di decidere. La decisione resta del responsabile: non dichiarare mai la richiesta approvata o rifiutata.
-Input ricevuto: ${p.input['approval id']}`,
+4. Chiusura: cosa consiglieresti di verificare prima di decidere. La decisione resta del responsabile: non dichiarare mai la richiesta approvata o rifiutata.`,
                             },
                         ],
                     },
@@ -207,16 +208,17 @@ Regole:
   CV_MISSING = curriculum dell'HCP non ricevuto.
   CONTRACT_MISSING = contratto non firmato.
 - Se dati_mancanti non e' vuoto, dillo esplicitamente come dato mancante.
-- Se il JSON contiene un campo errore, spiega solo che l'engagement non e'
-  disponibile per questo utente e fermati: NOT_APPROVER vuol dire che l'utente
-  non e' ne' approvatore ne' delegato, NOT_FOUND che il record non esiste.
+- Applica questa regola SOLO se il JSON ha una chiave "errore": spiega che
+  l'engagement non e' disponibile per questo utente e fermati. NOT_APPROVER vuol
+  dire che l'utente non e' ne' approvatore ne' delegato, NOT_FOUND che il record
+  non esiste. Se la chiave "errore" non c'e', i dati sono validi: usali, non
+  dubitarne e non commentare il formato degli identificativi.
 
 Rispondi in italiano, massimo 8 righe, in questa forma:
 1. Una riga: numero, HCP, specializzazione, tipo e data dell'evento.
 2. Una riga su compenso proposto e fair market value.
 3. Rischi di compliance: una riga per ogni alert, in parole semplici. Se non ce ne sono, scrivi "Nessun rischio rilevato".
-4. Chiusura: cosa serve prima di dare l'ok. La decisione resta del referente compliance: non dichiarare mai l'engagement approvato o rifiutato.
-Input ricevuto: ${p.input['approval id']}`,
+4. Chiusura: cosa serve prima di dare l'ok. La decisione resta del referente compliance: non dichiarare mai l'engagement approvato o rifiutato.`,
                             },
                         ],
                     },
