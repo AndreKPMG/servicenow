@@ -462,3 +462,14 @@ non sopravvive e perché la correzione (a) non è la strada.
 Correzione applicata: nuova route **POST `/approvals/decision`** con `approval_sys_id` nel **body**,
 stessa logica e stessi controlli (chiama lo stesso `ChatDemoApi.decide()`), `consumes`/`produces` larghi
 come la route SLO. La route con l'id nel percorso resta, per non rompere nulla.
+
+### `reset(true)` non cancellava incident e task_sla: `delete_access = false`
+Su `sys_db_object` le tabelle `incident` e `task_sla` hanno `create_access`, `read_access` e
+`update_access` a true ma **`delete_access` a false**. Da un'app scoped `deleteRecord()` su quelle
+tabelle restituisce `false` **senza sollevare eccezione**: `reset(true)` riportava `incident: 0` e la
+pulizia non avveniva. È la causa reale dei volumi doppi (non il solo doppio `seed()`), e di conseguenza
+del blocco `GIA POPOLATO` che impediva al nuovo `seed()` di creare qualunque cosa.
+
+`_purge()` ora conta i mancati e restituisce `{cancellati, non_cancellati, motivo}` invece di un 0 muto.
+La pulizia di `incident` e `task_sla` va comunque fatta da uno **script in scope Global**, che non ha
+quella restrizione: lo scope dell'app non può cancellarli in nessun caso.

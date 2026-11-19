@@ -1230,6 +1230,11 @@ ChatDemoRunner.prototype = {
         }
     },
 
+    // ATTENZIONE: su sys_db_object le tabelle incident e task_sla hanno
+    // delete_access = false. Da uno scope deleteRecord() restituisce false
+    // SENZA sollevare: la cancellazione non avviene e non se ne accorge nessuno.
+    // Qui i mancati vengono contati e riportati, cosi' reset() non dice 0 in
+    // silenzio. La pulizia di quelle due tabelle va fatta da uno script Global.
     _purge: function (table, encoded) {
         try {
             var gr = new GlideRecord(table)
@@ -1237,9 +1242,18 @@ ChatDemoRunner.prototype = {
             gr.setLimit(5000)
             gr.query()
             var n = 0
+            var falliti = 0
             while (gr.next()) {
                 gr.setWorkflow(false)
                 if (gr.deleteRecord()) n++
+                else falliti++
+            }
+            if (falliti) {
+                return {
+                    cancellati: n,
+                    non_cancellati: falliti,
+                    motivo: 'delete_access = false su ' + table + ': cancellare da uno script in scope Global.',
+                }
             }
             return n
         } catch (e) {
