@@ -473,3 +473,16 @@ del blocco `GIA POPOLATO` che impediva al nuovo `seed()` di creare qualunque cos
 `_purge()` ora conta i mancati e restituisce `{cancellati, non_cancellati, motivo}` invece di un 0 muto.
 La pulizia di `incident` e `task_sla` va comunque fatta da uno **script in scope Global**, che non ha
 quella restrizione: lo scope dell'app non può cancellarli in nessun caso.
+
+### Stato verificato dal connettore (19/11/2026, dopo pulizia Global + seed)
+Dati: 10 acquisti e 10 HCx (5+5 in attesa, 2+2 test, 3+3 storico), 141 incident (123 storici + 18 aperti),
+299 task_sla. `pilotReport`: 14 record aperti con **1 contesto e 1 approvazione ciascuno**, 6 storici con 0,
+`esito_univocita: OK`, nessun duplicato.
+- `list_my_approvals`: **10**, 5 acquisti + 5 HCx, tutti i casi di alert coperti.
+- `get_sla_performance`: settembre **44,7%** di breach, gli altri mesi fra 21% e 27%, novembre **23 SLA in corso**.
+- `get_ticket_trend`: picco 38 a settembre, calo a 19 in ottobre, backlog **18**.
+
+**`snapshot_allineato` e `pronto` di `checkFlows()` non sono affidabili**: in questo report risultano `false`
+mentre i flow hanno creato regolarmente 14 contesti e 14 approvazioni. Né `published_version` né il confronto
+fra `latest_snapshot` e `master_snapshot` dicono se un flow parte. L'unica prova è `per_record`: contesto e
+approvazione creati. `checkFlows()` andrebbe ridotto a riportare i campi senza esprimere un giudizio.
