@@ -526,3 +526,20 @@ Per distinguere fra ACL di piattaforma e il nostro guard serve il **corpo della 
 totale per mese. Ora ogni mese ha `per: { <valore>: { totale, breached, in_corso, percentuale_rispetto } }`.
 Il valore si ricava da una mappa `task -> campo` costruita con una sola lettura degli incident CHATDEMO,
 senza dot-walk e senza una lettura per riga.
+
+### CORREZIONE: le skill sono attive, manca il provider LLM
+La lettura precedente era sbagliata. Su `sn_nowassist_skill_config` il campo `state = 0` **non** è lo
+"Skill status" della UI: quello corrisponde a `sys_one_extend_capability.active`, che per tutte e tre le
+skill è **`true`**. Le skill sono attive, come mostrava la console.
+
+La vera causa dei 500 "Execution failed" sta a valle. Ogni skill esegue tramite
+`sys_one_extend_capability_definition.api`, di tipo `sys_hub_flow`. Per le nostre tre quel flow è
+**`Amazon Bedrock Chat Completions`** (`52f46aeb9f2c5210da502fca9a0a1cda`, scope `7cc4ec81...`), che è
+**`active = false`**.
+
+E non è un caso isolato: su questa istanza **tutti** i flow di esecuzione dei provider sono spenti —
+Amazon Bedrock, Azure OpenAI, OpenAI, Google Vertex/AI Studio, IBM watsonx, e anche
+`Now LLM Integration` e `Now LLM LTS Integration`. Nessun provider LLM è cablato: non è un problema
+dell'app e **nessun install lo risolve**. Serve attivare/provisionare un provider lato piattaforma
+(Now Assist Admin / Generative AI Controller), e solo dopo si potranno verificare i due rischi residui
+sulle skill (nome input `approval id` con lo spazio, Script Include dei tool `package_private`).
