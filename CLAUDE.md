@@ -543,3 +543,17 @@ Amazon Bedrock, Azure OpenAI, OpenAI, Google Vertex/AI Studio, IBM watsonx, e an
 dell'app e **nessun install lo risolve**. Serve attivare/provisionare un provider lato piattaforma
 (Now Assist Admin / Generative AI Controller), e solo dopo si potranno verificare i due rischi residui
 sulle skill (nome input `approval id` con lo spazio, Script Include dei tool `package_private`).
+
+### Cosa manca per i provider LLM (rilevato in sola lettura)
+Già installato e attivo: **Generative AI Controller 15.1.2**, **Now Assist Core 29.7.4**,
+**Amazon Bedrock Spoke 1.6.0**, più gli spoke OpenAI e Azure OpenAI.
+Esistono gli alias di connessione `Amazon Bedrock`, `Now LLM`, `Azure OpenAI`, ed è attiva la
+connessione HTTP `LLM Proxy OEM` verso `https://llmproxy-prod-gateway`.
+
+Quindi i pezzi ci sono, ma **nessun flow di esecuzione provider è attivo**: né
+`Amazon Bedrock Chat Completions` né `Now LLM Integration`. Su Now Assist quei flow si accendono quando
+le funzionalità vengono abilitate in **Now Assist Admin** e la sottoscrizione è applicata; l'entitlement
+non è verificabile dalle tabelle che ho letto.
+
+Segnale da ricontrollare dopo l'intervento, in sola lettura: `sys_hub_flow` del provider scelto deve
+passare a `active = true`. Finché resta false, le skill continueranno a dare 500 "Execution failed".
