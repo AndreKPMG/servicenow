@@ -1,8 +1,11 @@
 import { Property } from '@servicenow/sdk/core'
 import { chatdemoAdmin } from '../security/roles.now'
 
-// Valorizzata con l'utente ccandre (sys_id letto dall'istanza): la demo viene
-// condotta con l'utente autenticato sull'alias demo1.
+// Valorizzata con l'utenza con cui il CONNETTORE MCP chiama le API: afabbian
+// (Andrea Fabbian), verificata sul log di transazione dell'endpoint, non con
+// ccandre, che e' solo l'utenza con cui l'SDK autentica l'install.
+// Era proprio questo disallineamento a far restituire 0 approvazioni a
+// list_my_approvals: l'API risponde a chi chiama, e chi chiama non ne aveva.
 // Nota: la proprieta' nasce come metadata (sys_properties ha "Can create" = false
 // per gli scope esterni, quindi lo script non puo' crearla da zero).
 // Il valore lo scrive ChatDemoSetup cercando l'utente chatdemo.approver per
@@ -11,9 +14,9 @@ Property({
     $id: Now.ID['prop_demo_approver'],
     name: 'x_kpm95_chatdemo.demo_approver',
     type: 'string',
-    value: 'f45c6290c39bc7507bd96e35990131e2',
+    value: '26aaf798c338cf906c10a5677a0131c5',
     description:
-        'sys_id dell utente approvatore della demo (chatdemo.approver). Valorizzata da ChatDemoSetup.run().',
+        'sys_id dell utente che conduce la demo: e quello a cui i flow intestano le 10 approvazioni in attesa.',
     ignoreCache: false,
     roles: {
         write: [chatdemoAdmin],

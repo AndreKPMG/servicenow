@@ -337,6 +337,10 @@ declare global {
                         table: 'sysauto_script'
                         id: 'bc6ff86fd50a4d40a47fe0eac290c58a'
                     }
+                    p_detail_approval: {
+                        table: 'sys_ws_query_parameter'
+                        id: 'e6488e049b7b410d8af7b67b4e8e5ddd'
+                    }
                     p_mine_ambito: {
                         table: 'sys_ws_query_parameter'
                         id: '6b4e1d6562d04a44aad11cb867aa7660'
@@ -413,6 +417,10 @@ declare global {
                     route_approvals_decision_body: {
                         table: 'sys_ws_operation'
                         id: 'fabf12061108460fb80e540d9380ced6'
+                    }
+                    route_approvals_detail: {
+                        table: 'sys_ws_operation'
+                        id: '9149e62c8d4047e29995d6dc17b4fcb1'
                     }
                     route_approvals_mine: {
                         table: 'sys_ws_operation'
@@ -1552,6 +1560,14 @@ declare global {
                             value: 'congress'
                             language: 'en'
                             dependent_value: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sys_ws_query_parameter_map'
+                        id: 'ee5cb38aba714d4192ed2940567a15e4'
+                        key: {
+                            web_service_operation: '9149e62c8d4047e29995d6dc17b4fcb1'
+                            web_service_query_parameter: 'e6488e049b7b410d8af7b67b4e8e5ddd'
                         }
                     },
                     {

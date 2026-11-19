@@ -117,6 +117,28 @@ RestApi({
             requestExample: '{"decision":"approved","comment":"Verificato budget"}',
             script: Now.include('./routes/approvals-decision.js'),
         },
+        {
+            $id: Now.ID['route_approvals_detail'],
+            name: 'Approval detail',
+            method: 'GET',
+            path: '/approvals/detail',
+            version: 1,
+            active: true,
+            authentication: true,
+            produces: 'application/json',
+            shortDescription:
+                'Dettaglio di una approvazione: campi ammessi dell ambito e alert gia calcolati. Stessi controlli di approvals/mine: solo approvatore o delegato attivo.',
+            parameters: [
+                {
+                    $id: Now.ID['p_detail_approval'],
+                    name: 'approval_sys_id',
+                    required: true,
+                    exampleValue: '28765853c3605b586c10a5677a0131e5',
+                    shortDescription: 'approval_sys_id restituito da /approvals/mine.',
+                },
+            ],
+            script: Now.include('./routes/approvals-detail.js'),
+        },
         // Stessa logica, ma con l'id nel BODY invece che nel percorso.
         // Serve perche' MCP Server Console non elenca la POST con il parametro
         // nel percorso, mentre elenca le GET e le POST senza parametri di path
