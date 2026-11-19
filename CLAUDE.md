@@ -651,3 +651,16 @@ Corpo della risposta: `403 {"error":{"message":"User Not Authorized","detail":"F
 Quindi **non** è il guard `ROLE_REQUIRED` della route, ma l'**ACL a livello di API** della operation REST
 (campo `enforce_acl`, valorizzato sulle nostre e vuoto sulla route SLO di confronto). Si ripresenta sulla
 prima chiamata e passa al secondo tentativo.
+
+### Backend completo (19/11/2026)
+Giro end-to-end verificato dal connettore: `list_my_approvals` 10 approvazioni, `get_ticket_trend`,
+`get_sla_performance` con `group_by`, `analisi_ticket_itsm`, `riepilogo_approvazione_acquisti` e
+`riepilogo_approvazione_hcx` rispondono tutti con dati reali e alert corretti, senza mai esprimere
+una decisione.
+
+Restano due cose non bloccanti:
+1. **Lingua della risposta**: la piattaforma accoda `Generate the response in language English` e vince
+   sul nostro "Rispondi in italiano". Si governa in AI Admin Hub -> Settings -> Multilingual service.
+2. **403 intermittente** `Failed API level ACL Validation` sulla prima chiamata a una route: e l'ACL a
+   livello di API (`enforce_acl`), non il nostro guard. Per toglierlo servirebbe intervenire sulle
+   operation REST e quindi un altro install.
