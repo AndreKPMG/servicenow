@@ -664,3 +664,19 @@ Restano due cose non bloccanti:
 2. **403 intermittente** `Failed API level ACL Validation` sulla prima chiamata a una route: e l'ACL a
    livello di API (`enforce_acl`), non il nostro guard. Per toglierlo servirebbe intervenire sulle
    operation REST e quindi un altro install.
+
+### Prova di decide_approval: tre esiti distinti
+1. **Rifiuto senza commento**: nel log delle transazioni **non esiste alcuna chiamata** di rifiuto.
+   L'unica chiamata a `/approvals/decision` è quella di approvazione delle 11:24:33. Quindi l'API non ha
+   risposto né 403 né 400: la richiesta non è mai partita, si è fermata lato connettore.
+2. **Commento non salvato**: due difetti sovrapposti.
+   - `sysapproval_approver.comments` è di tipo **`journal_input`**: `getValue('comments')` restituisce
+     **sempre** stringa vuota, anche a voce scritta. La rilettura era quindi sbagliata a prescindere →
+     ora usa `getJournalEntry(1)` tramite il nuovo helper `_journal()`.
+   - Ma la voce **non c'è nemmeno nel journal** (`sys_journal_field` vuoto per quell'approvazione):
+     il commento non è proprio arrivato nel body. `decision` sì (lo stato è passato ad `approved`),
+     quindi il body viene letto: manca la mappatura di `comment` nel tool MCP.
+3. **Date**: `opened_at` sulle richieste **è distribuito** (19, 18, 17, 16, 15 novembre). A essere
+   sbagliato era il campo esposto: `approvals/mine` restituiva `sys_created_on` **dell'approvazione**,
+   che nasce tutta insieme con `seed()`. Ora `data` è l'`opened_at` della richiesta, con
+   `data_approvazione_creata` a parte.

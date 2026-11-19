@@ -213,7 +213,10 @@ ChatDemoApi.prototype = {
                 numero: dettaglio.numero,
                 titolo: dettaglio.titolo,
                 richiedente: dettaglio.richiedente,
-                data: gr.getValue('sys_created_on'),
+                // Data di apertura della RICHIESTA, non dell'approvazione: le
+                // approvazioni nascono tutte insieme quando gira seed().
+                data: dettaglio.aperta_il || gr.getValue('sys_created_on'),
+                data_approvazione_creata: gr.getValue('sys_created_on'),
                 importo: dettaglio.importo,
                 delegata: gr.getValue('approver') !== me,
             })
@@ -222,13 +225,14 @@ ChatDemoApi.prototype = {
     },
 
     _recordDetail: function (tabella, recordId) {
-        var out = { numero: '', titolo: '', richiedente: '', importo: null }
+        var out = { numero: '', titolo: '', richiedente: '', importo: null, aperta_il: '' }
         var gr = new GlideRecord(tabella)
         if (!gr.get(recordId)) return out
         out.numero = gr.getValue('number')
         out.titolo = gr.getValue('short_description')
         out.richiedente = gr.getDisplayValue('opened_by')
         out.importo = tabella === this.T_ACQ ? gr.getValue('amount') : gr.getValue('proposed_fee')
+        out.aperta_il = gr.getValue('opened_at') || ''
         return out
     },
 
@@ -295,7 +299,9 @@ ChatDemoApi.prototype = {
             approval_sys_id: approvalId,
             esito: decision,
             stato_riletto: riletto.getValue('state'),
-            commento_salvato: riletto.getValue('comments') || '',
+            // comments e' journal_input: getValue() restituisce SEMPRE stringa
+            // vuota, anche quando la voce e' stata scritta. Serve getJournalEntry.
+            commento_salvato: this._journal(riletto, 'comments'),
         }
     },
 
@@ -398,6 +404,18 @@ ChatDemoApi.prototype = {
     // Confrontare con 'true' fa leggere ogni booleano come falso: era la causa
     // di breach e in_corso sempre a zero e degli alert QUOTE_MISSING,
     // CV_MISSING e CONTRACT_MISSING sempre accesi.
+    // Legge l'ultima voce di un campo journal. getValue() su un journal_input
+    // non restituisce nulla: va usato getJournalEntry(1).
+    _journal: function (gr, campo) {
+        try {
+            var el = gr.getElement(campo)
+            var v = el ? el.getJournalEntry(1) : ''
+            return v ? '' + v : ''
+        } catch (e) {
+            return ''
+        }
+    },
+
     _bool: function (gr, campo) {
         var v = gr.getValue(campo)
         return v === '1' || v === 'true' || v === true
