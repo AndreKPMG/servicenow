@@ -618,3 +618,19 @@ Riscritti come `Class.create()` con un metodo: `ChatDemoApprovalTool.contesto(ap
 **Scorciatoia senza install**: puntare il tool direttamente a **`ChatDemoApi`**, che è già in forma
 `Class.create()` ed è già sull'istanza, scegliendo il metodo `skillTicketAggregates` (ITSM) o
 `skillContext` (acquisti e HCx). Stessa logica, stessi controlli, nessun install.
+
+### Install del 19/11 (rollback `f5f5a897c32c5b586c10a5677a0131fc`) e verifica
+Incluso: tool in forma classe con metodo omonimo, `group_by` su `/sla/performance`, nuova route
+**GET `/approvals/detail?approval_sys_id=`**, date delle 10 richieste distribuite in `seed()`,
+`demo_approver` = `afabbian` nel sorgente.
+
+Verifica in sola lettura dopo l'install, tutto **sopravvissuto**:
+- `demo_approver` = `26aaf798c338cf906c10a5677a0131c5` (afabbian): l'install non lo riporta più indietro;
+- il tool creato a mano nel wizard (`..._ChatDemoTicketTool.ChatDemoTicketTool`) è intatto,
+  `sys_updated_on` fermo alle 10:49 — l'install normale non tocca i record fuori dal sorgente;
+- le tre skill restano `state = 1` (published);
+- i due Script Include dei tool sono ora `Class.create()` con metodo omonimo.
+
+Prova end-to-end dal connettore: `analisi_ticket_itsm` risponde con i dati reali (141 aperti, 123 chiusi,
+picco 38 a settembre, backlog 18 con la ripartizione per gruppo) e `get_sla_performance` con `group_by`
+restituisce la ripartizione per priorità in ogni mese.
